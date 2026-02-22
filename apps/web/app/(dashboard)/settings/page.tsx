@@ -1,0 +1,226 @@
+'use client'
+
+import { useCallback, useEffect, useMemo, useState } from 'react'
+
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { useToast } from '@/hooks/useToast'
+import { authProfileApi, connectionsApi } from '@/lib/api'
+
+export default function SettingsPage() {
+  const [displayName, setDisplayName] = useState('')
+  const [monthlyIncome, setMonthlyIncome] = useState<number>(0)
+  const [notificationEnabled, setNotificationEnabled] = useState(true)
+  const [loading, setLoading] = useState(true)
+  const [savingProfile, setSavingProfile] = useState(false)
+  const [lineLoading, setLineLoading] = useState(false)
+  const [lineConnected, setLineConnected] = useState(false)
+  const [lineConnectedAt, setLineConnectedAt] = useState<string | null>(null)
+  const { toast } = useToast()
+
+  const lineLiffId = process.env.NEXT_PUBLIC_LINE_LIFF_ID
+
+  const loadSettings = useCallback(async () => {
+    setLoading(true)
+    try {
+      const [profile, connections] = await Promise.all([
+        authProfileApi.get(),
+        connectionsApi.list(),
+      ])
+
+      setDisplayName(profile.display_name)
+      setMonthlyIncome(profile.monthly_income)
+
+      const lineConnection = connections.find((connection) => connection.platform === 'line' && connection.is_active)
+      setLineConnected(Boolean(lineConnection))
+      setLineConnectedAt(lineConnection?.connected_at ?? null)
+    } catch (error) {
+      toast({
+        title: error instanceof Error ? error.message : '設定情報の取得に失敗しました',
+        variant: 'error',
+      })
+    } finally {
+      setLoading(false)
+    }
+  }, [toast])
+
+  useEffect(() => {
+    void loadSettings()
+  }, [loadSettings])
+
+  const lineStatusText = useMemo(() => {
+    if (!lineConnected) {
+      return '未連携'
+    }
+    if (!lineConnectedAt) {
+      return 'LINE連携済み'
+    }
+
+    return `LINE連携済み（${new Date(lineConnectedAt).toLocaleString('ja-JP')}）`
+  }, [lineConnected, lineConnectedAt])
+
+  async function handleProfileSave() {
+    try {
+      setSavingProfile(true)
+      await authProfileApi.update({
+        display_name: displayName,
+        monthly_income: monthlyIncome,
+      })
+      toast({ title: 'プロフィールを保存しました', variant: 'success' })
+    } catch (error) {
+      toast({
+        title: error instanceof Error ? error.message : 'プロフィール保存に失敗しました',
+        variant: 'error',
+      })
+    } finally {
+      setSavingProfile(false)
+    }
+  }
+
+  async function handleLineConnect() {
+    if (!lineLiffId) {
+      toast({
+        title: 'NEXT_PUBLIC_LINE_LIFF_ID が未設定です',
+        variant: 'error',
+      })
+      return
+    }
+
+    try {
+      setLineLoading(true)
+      const liffModule = await import('@line/liff')
+      const liff = liffModule.default
+
+      await liff.init({ liffId: lineLiffId })
+
+      if (!liff.isLoggedIn()) {
+        liff.login({ redirectUri: window.location.href })
+        return
+      }
+
+      const profile = await liff.getProfile()
+      await connectionsApi.connectLine(profile.userId)
+      await loadSettings()
+      toast({
+        title: 'LINE連携が完了しました',
+        variant: 'success',
+      })
+    } catch (error) {
+      toast({
+        title: error instanceof Error ? error.message : 'LINE連携に失敗しました',
+        variant: 'error',
+      })
+    } finally {
+      setLineLoading(false)
+    }
+  }
+
+  async function handleLineDisconnect() {
+    try {
+      setLineLoading(true)
+      await connectionsApi.disconnect('line')
+      await loadSettings()
+      toast({
+        title: 'LINE連携を解除しました',
+        variant: 'success',
+      })
+    } catch (error) {
+      toast({
+        title: error instanceof Error ? error.message : 'LINE連携解除に失敗しました',
+        variant: 'error',
+      })
+    } finally {
+      setLineLoading(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="space-y-5">
+        <h1 className="font-display text-2xl font-bold">設定</h1>
+        <p className="text-sm text-text2">読み込み中...</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-5">
+      <div>
+        <h1 className="font-display text-2xl font-bold">設定</h1>
+        <p className="text-sm text-text2">プロフィール・連携・通知設定を編集できます</p>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>プロフィール設定</CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-4 md:grid-cols-2">
+          <div>
+            <label className="text-xs text-text2">表示名</label>
+            <Input value={displayName} onChange={(event) => setDisplayName(event.target.value)} />
+          </div>
+          <div>
+            <label className="text-xs text-text2">月収</label>
+            <Input
+              type="number"
+              value={monthlyIncome}
+              onChange={(event) => setMonthlyIncome(Number(event.target.value))}
+            />
+          </div>
+          <div className="md:col-span-2">
+            <Button onClick={() => void handleProfileSave()} disabled={savingProfile}>
+              {savingProfile ? '保存中...' : '保存する'}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>LINE連携</CardTitle>
+        </CardHeader>
+        <CardContent className="flex items-center justify-between gap-4">
+          <div>
+            <p className="text-sm">{lineStatusText}</p>
+            <p className="text-xs text-text2">LINEから支出登録とサマリー確認ができます</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Badge variant={lineConnected ? 'success' : 'warning'}>{lineConnected ? 'Connected' : 'Disconnected'}</Badge>
+            {lineConnected ? (
+              <Button variant="ghost" onClick={() => void handleLineDisconnect()} disabled={lineLoading}>
+                {lineLoading ? '解除中...' : '連携解除する'}
+              </Button>
+            ) : (
+              <Button variant="ghost" onClick={() => void handleLineConnect()} disabled={lineLoading}>
+                {lineLoading ? '連携中...' : 'LINEと連携する'}
+              </Button>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>通知設定</CardTitle>
+        </CardHeader>
+        <CardContent className="flex items-center justify-between">
+          <p className="text-sm">月次サマリー通知</p>
+          <button
+            type="button"
+            className={`relative h-7 w-14 rounded-full transition-colors ${notificationEnabled ? 'bg-accent' : 'bg-white/20'}`}
+            onClick={() => setNotificationEnabled((prev) => !prev)}
+            aria-label="月次サマリー通知のON/OFF"
+          >
+            <span
+              className={`absolute top-1 h-5 w-5 rounded-full bg-white transition-transform ${
+                notificationEnabled ? 'translate-x-8' : 'translate-x-1'
+              }`}
+            />
+          </button>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}

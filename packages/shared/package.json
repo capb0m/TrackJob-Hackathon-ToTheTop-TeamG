@@ -1,0 +1,10 @@
+{
+  "name": "@lifebalance/shared",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./types": "./types/index.ts",
+    "./types/*": "./types/*.ts"
+  }
+}

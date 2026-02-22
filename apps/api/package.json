@@ -1,0 +1,26 @@
+{
+  "name": "api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun run --watch src/index.ts",
+    "start": "bun run src/index.ts",
+    "db:generate": "drizzle-kit generate --config=drizzle.config.ts",
+    "db:migrate": "drizzle-kit migrate --config=drizzle.config.ts",
+    "eval:prompts": "bun run src/scripts/eval-prompts.ts"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.24.1",
+    "@hono/zod-validator": "^0.4.3",
+    "@lifebalance/shared": "workspace:*",
+    "@supabase/supabase-js": "^2.49.1",
+    "drizzle-orm": "^0.39.3",
+    "hono": "^4.7.2",
+    "postgres": "^3.4.5",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "drizzle-kit": "^0.30.4"
+  }
+}

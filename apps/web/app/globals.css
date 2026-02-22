@@ -1,0 +1,54 @@
+@import 'tailwindcss';
+
+:root {
+  --bg: #0a0e1a;
+  --bg2: #0f1524;
+  --card: #131929;
+  --card2: #1a2235;
+  --accent: #4af0b0;
+  --accent2: #6c8fff;
+  --accent3: #ff7eb3;
+  --warn: #ffb547;
+  --text: #e8edf8;
+  --text2: #7a8aaa;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: radial-gradient(circle at right top, rgba(108, 143, 255, 0.08), transparent 40%),
+    radial-gradient(circle at left bottom, rgba(74, 240, 176, 0.08), transparent 35%), var(--bg);
+  color: var(--text);
+}
+
+.font-display {
+  font-family: var(--font-syne), sans-serif;
+}
+
+.font-body {
+  font-family: var(--font-noto), sans-serif;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-up {
+  animation: fadeUp 0.35s ease both;
+}
