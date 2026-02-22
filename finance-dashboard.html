@@ -1,0 +1,1705 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LifeBalance — 家計・将来設計ダッシュボード</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0e1a;
+    --bg2: #0f1524;
+    --card: #131929;
+    --card2: #1a2235;
+    --border: rgba(255,255,255,0.07);
+    --accent: #4af0b0;
+    --accent2: #6c8fff;
+    --accent3: #ff7eb3;
+    --warn: #ffb547;
+    --text: #e8edf8;
+    --text2: #7a8aaa;
+    --text3: #3d4d6a;
+    --green: #2edd8e;
+    --red: #ff5f6d;
+    --radius: 16px;
+    --radius-sm: 10px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Noto Sans JP', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Layout */
+  .app { display: flex; min-height: 100vh; }
+  
+  /* Sidebar */
+  .sidebar {
+    width: 240px;
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    padding: 28px 0;
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    z-index: 100;
+  }
+  .logo {
+    padding: 0 24px 32px;
+    font-family: 'Syne', sans-serif;
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .logo-icon {
+    width: 32px; height: 32px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+  }
+  .logo span { color: var(--accent); }
+
+  .nav-section { padding: 0 12px 8px; margin-bottom: 4px; }
+  .nav-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--text3);
+    padding: 0 12px 8px;
+  }
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 13.5px;
+    color: var(--text2);
+    transition: all 0.2s;
+    font-weight: 400;
+    position: relative;
+  }
+  .nav-item:hover { background: var(--border); color: var(--text); }
+  .nav-item.active {
+    background: rgba(74, 240, 176, 0.1);
+    color: var(--accent);
+    font-weight: 500;
+  }
+  .nav-item.active::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 20%; bottom: 20%;
+    width: 3px;
+    background: var(--accent);
+    border-radius: 0 2px 2px 0;
+  }
+  .nav-icon { width: 18px; text-align: center; font-size: 15px; }
+  
+  .sidebar-bottom {
+    margin-top: auto;
+    padding: 16px 12px 0;
+    border-top: 1px solid var(--border);
+  }
+
+  /* Main */
+  .main {
+    margin-left: 240px;
+    flex: 1;
+    padding: 32px;
+    max-width: calc(100% - 240px);
+  }
+
+  /* Header */
+  .page-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 32px;
+  }
+  .page-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+  }
+  .page-sub { color: var(--text2); font-size: 13px; margin-top: 4px; }
+  .header-actions { display: flex; gap: 10px; align-items: center; }
+  
+  .btn {
+    padding: 9px 18px;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+    font-family: inherit;
+  }
+  .btn-primary {
+    background: var(--accent);
+    color: #0a1a12;
+  }
+  .btn-primary:hover { background: #3ddca0; transform: translateY(-1px); }
+  .btn-ghost {
+    background: var(--card2);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+  .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* Grid */
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 20px; }
+  .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 20px; }
+  .grid-65 { display: grid; grid-template-columns: 1.8fr 1fr; gap: 16px; margin-bottom: 20px; }
+
+  /* Cards */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+  }
+  .card-title {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: var(--text2);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  
+  /* Stat Cards */
+  .stat-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  .stat-card::after {
+    content: '';
+    position: absolute;
+    top: 0; right: 0;
+    width: 80px; height: 80px;
+    border-radius: 50%;
+    filter: blur(30px);
+    opacity: 0.15;
+  }
+  .stat-card.green::after { background: var(--green); }
+  .stat-card.blue::after { background: var(--accent2); }
+  .stat-card.orange::after { background: var(--warn); }
+
+  .stat-label { font-size: 12px; color: var(--text2); font-weight: 500; margin-bottom: 10px; }
+  .stat-value {
+    font-family: 'Syne', sans-serif;
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -1px;
+    margin-bottom: 6px;
+  }
+  .stat-change {
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .stat-change.up { color: var(--green); }
+  .stat-change.down { color: var(--red); }
+
+  /* Progress */
+  .progress-track {
+    background: var(--bg);
+    border-radius: 99px;
+    height: 6px;
+    overflow: hidden;
+    margin: 6px 0;
+  }
+  .progress-fill {
+    height: 100%;
+    border-radius: 99px;
+    transition: width 1s ease;
+  }
+
+  /* Budget Items */
+  .budget-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .budget-item:last-child { border-bottom: none; }
+  .budget-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .budget-name { flex: 1; font-size: 13.5px; }
+  .budget-amounts { text-align: right; }
+  .budget-spent { font-size: 13.5px; font-weight: 500; }
+  .budget-limit { font-size: 11px; color: var(--text2); }
+  .budget-pct { font-size: 12px; width: 36px; text-align: right; }
+
+  /* Probability Gauge */
+  .gauge-wrap { display: flex; align-items: center; justify-content: center; padding: 10px 0; }
+  .gauge-container { position: relative; }
+  canvas.gauge { display: block; }
+  .gauge-center {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -30%);
+    text-align: center;
+  }
+  .gauge-pct {
+    font-family: 'Syne', sans-serif;
+    font-size: 36px;
+    font-weight: 800;
+    color: var(--accent);
+  }
+  .gauge-label { font-size: 11px; color: var(--text2); }
+
+  /* Chart area */
+  .chart-area { position: relative; height: 180px; }
+  canvas.chart { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+
+  /* Transactions */
+  .tx-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .tx-item:last-child { border-bottom: none; }
+  .tx-icon {
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+  .tx-info { flex: 1; }
+  .tx-name { font-size: 13.5px; font-weight: 500; }
+  .tx-cat { font-size: 11px; color: var(--text2); }
+  .tx-date { font-size: 11px; color: var(--text3); }
+  .tx-amount { font-size: 14px; font-weight: 600; }
+  .tx-amount.neg { color: var(--red); }
+  .tx-amount.pos { color: var(--green); }
+
+  /* Chat Setup */
+  .chat-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(10,14,26,0.85);
+    backdrop-filter: blur(8px);
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+  }
+  .chat-overlay.open { opacity: 1; pointer-events: all; }
+  .chat-modal {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    width: 520px;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transform: translateY(20px);
+    transition: transform 0.3s;
+  }
+  .chat-overlay.open .chat-modal { transform: translateY(0); }
+  .chat-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .chat-header h3 { font-family: 'Syne', sans-serif; font-size: 17px; font-weight: 700; }
+  .chat-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .msg {
+    display: flex;
+    gap: 10px;
+    max-width: 90%;
+  }
+  .msg.bot { align-self: flex-start; }
+  .msg.user { align-self: flex-end; flex-direction: row-reverse; }
+  .msg-avatar {
+    width: 28px; height: 28px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px;
+    flex-shrink: 0;
+  }
+  .msg-bubble {
+    background: var(--card2);
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-size: 13.5px;
+    line-height: 1.6;
+  }
+  .msg.user .msg-bubble {
+    background: rgba(74,240,176,0.15);
+    border: 1px solid rgba(74,240,176,0.2);
+  }
+  .msg-options { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+  .msg-opt {
+    padding: 6px 12px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 99px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: inherit;
+    color: var(--text);
+  }
+  .msg-opt:hover { border-color: var(--accent); color: var(--accent); }
+  .chat-input-area {
+    padding: 16px 24px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 10px;
+  }
+  .chat-input {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    color: var(--text);
+    font-size: 13.5px;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .chat-input:focus { border-color: var(--accent); }
+
+  /* Add Expense Modal */
+  .expense-modal {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    width: 440px;
+    overflow: hidden;
+    transform: translateY(20px);
+    transition: transform 0.3s;
+  }
+  .chat-overlay.open .expense-modal { transform: translateY(0); }
+  .form-group { margin-bottom: 16px; }
+  .form-label { font-size: 12px; color: var(--text2); font-weight: 500; margin-bottom: 6px; display: block; }
+  .form-input, .form-select {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    color: var(--text);
+    font-size: 14px;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .form-input:focus, .form-select:focus { border-color: var(--accent); }
+  .form-select option { background: var(--card); }
+  .cat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .cat-chip {
+    padding: 8px 6px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-size: 11px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .cat-chip.sel { border-color: var(--accent); background: rgba(74,240,176,0.1); color: var(--accent); }
+  .cat-chip span { display: block; font-size: 18px; margin-bottom: 3px; }
+
+  /* Tabs */
+  .tabs { display: flex; gap: 4px; margin-bottom: 20px; background: var(--card); padding: 4px; border-radius: var(--radius-sm); width: fit-content; }
+  .tab {
+    padding: 7px 16px;
+    border-radius: 7px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: var(--text2);
+    font-weight: 500;
+  }
+  .tab.active { background: var(--card2); color: var(--text); }
+
+  /* Tag */
+  .tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    border-radius: 99px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .tag.green { background: rgba(46,221,142,0.15); color: var(--green); }
+  .tag.red { background: rgba(255,95,109,0.15); color: var(--red); }
+  .tag.blue { background: rgba(108,143,255,0.15); color: var(--accent2); }
+  .tag.orange { background: rgba(255,181,71,0.15); color: var(--warn); }
+
+  /* Life Goals */
+  .goal-card {
+    background: var(--card2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 14px;
+    margin-bottom: 10px;
+  }
+  .goal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .goal-title { font-size: 13.5px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+  .goal-year { font-size: 11px; color: var(--text2); }
+  .goal-amounts { display: flex; justify-content: space-between; font-size: 12px; color: var(--text2); margin-top: 6px; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--text3); border-radius: 99px; }
+
+  /* Animations */
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  .card, .stat-card { animation: fadeUp 0.4s ease both; }
+  .stat-card:nth-child(1) { animation-delay: 0.05s; }
+  .stat-card:nth-child(2) { animation-delay: 0.1s; }
+  .stat-card:nth-child(3) { animation-delay: 0.15s; }
+
+  /* Section hidden */
+  .section { display: none; }
+  .section.active { display: block; }
+
+  .divider { height: 1px; background: var(--border); margin: 4px 0 16px; }
+
+  /* Advice cards */
+  .advice-card {
+    background: linear-gradient(135deg, rgba(74,240,176,0.06), rgba(108,143,255,0.06));
+    border: 1px solid rgba(74,240,176,0.15);
+    border-radius: var(--radius-sm);
+    padding: 14px;
+    margin-bottom: 10px;
+  }
+  .advice-title { font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--accent); }
+  .advice-text { font-size: 12.5px; color: var(--text2); line-height: 1.7; }
+
+  /* Notification dot */
+  .notif { 
+    width: 18px; height: 18px;
+    background: var(--red);
+    border-radius: 99px;
+    font-size: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700;
+    margin-left: auto;
+  }
+
+  /* close btn */
+  .close-btn {
+    width: 28px; height: 28px;
+    border-radius: 8px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text2);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+    transition: all 0.2s;
+  }
+  .close-btn:hover { color: var(--text); border-color: var(--text2); }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="logo">
+      <div class="logo-icon">💰</div>
+      Life<span>Balance</span>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-label">メイン</div>
+      <div class="nav-item active" onclick="showSection('dashboard', this)">
+        <span class="nav-icon">📊</span> ダッシュボード
+      </div>
+      <div class="nav-item" onclick="showSection('expense', this)">
+        <span class="nav-icon">💳</span> 支出管理
+        <div class="notif">3</div>
+      </div>
+      <div class="nav-item" onclick="showSection('budget', this)">
+        <span class="nav-icon">🎯</span> 予算・目標
+      </div>
+      <div class="nav-item" onclick="showSection('future', this)">
+        <span class="nav-icon">🔮</span> 将来設計
+      </div>
+    </div>
+
+    <div class="divider" style="margin: 8px 12px;"></div>
+
+    <div class="nav-section">
+      <div class="nav-label">分析</div>
+      <div class="nav-item" onclick="showSection('advice', this)">
+        <span class="nav-icon">💡</span> AIアドバイス
+      </div>
+      <div class="nav-item">
+        <span class="nav-icon">📈</span> レポート
+      </div>
+    </div>
+
+    <div class="sidebar-bottom">
+      <div class="nav-item" onclick="openChat('setup')">
+        <span class="nav-icon">⚙️</span> 初期設定（チャット）
+      </div>
+      <div class="nav-item">
+        <span class="nav-icon">🔗</span> 外部連携
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="main">
+
+    <!-- DASHBOARD -->
+    <div id="dashboard" class="section active">
+      <div class="page-header">
+        <div>
+          <div class="page-title">おはようございます、田中さん 👋</div>
+          <div class="page-sub">2025年6月 — 今月の残り予算を確認しましょう</div>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-ghost" onclick="openChat('setup')">🤖 チャット設定</button>
+          <button class="btn btn-primary" onclick="openExpenseModal()">＋ 支出を追加</button>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="grid-3">
+        <div class="stat-card green">
+          <div class="stat-label">今月の支出</div>
+          <div class="stat-value">¥143,200</div>
+          <div class="stat-change down">▲ 先月比 +¥8,300</div>
+          <div style="margin-top: 12px;">
+            <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text2);margin-bottom:4px;">
+              <span>予算 ¥180,000</span><span>79.6%</span>
+            </div>
+            <div class="progress-track">
+              <div class="progress-fill" style="width:79.6%;background:var(--warn);"></div>
+            </div>
+          </div>
+        </div>
+        <div class="stat-card blue">
+          <div class="stat-label">今月の貯蓄</div>
+          <div class="stat-value">¥56,800</div>
+          <div class="stat-change up">▲ 目標達成率 94.7%</div>
+          <div style="margin-top: 12px;">
+            <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text2);margin-bottom:4px;">
+              <span>目標 ¥60,000</span><span>94.7%</span>
+            </div>
+            <div class="progress-track">
+              <div class="progress-fill" style="width:94.7%;background:var(--accent2);"></div>
+            </div>
+          </div>
+        </div>
+        <div class="stat-card orange">
+          <div class="stat-label">総資産（推定）</div>
+          <div class="stat-value">¥3,840,000</div>
+          <div class="stat-change up">▲ 前月比 +¥68,000</div>
+          <div style="margin-top: 12px;">
+            <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text2);margin-bottom:4px;">
+              <span>目標資産 ¥50M（35歳）</span><span>7.7%</span>
+            </div>
+            <div class="progress-track">
+              <div class="progress-fill" style="width:7.7%;background:var(--accent);"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Middle row -->
+      <div class="grid-65">
+        <!-- Chart -->
+        <div class="card">
+          <div class="card-title">
+            支出トレンド
+            <div class="tabs" style="margin:0;">
+              <div class="tab active" id="tab3m" onclick="switchChart('3m')">3ヶ月</div>
+              <div class="tab" id="tab6m" onclick="switchChart('6m')">6ヶ月</div>
+              <div class="tab" id="tab1y" onclick="switchChart('1y')">1年</div>
+            </div>
+          </div>
+          <div class="chart-area">
+            <canvas class="chart" id="trendChart"></canvas>
+          </div>
+          <div style="display:flex;gap:16px;margin-top:12px;font-size:12px;color:var(--text2);">
+            <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--accent);margin-right:5px;"></span>支出</span>
+            <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--accent2);margin-right:5px;"></span>貯蓄</span>
+            <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--warn);margin-right:5px;"></span>予算上限</span>
+          </div>
+        </div>
+
+        <!-- Recent Transactions -->
+        <div class="card">
+          <div class="card-title">最近の取引 <a style="font-size:11px;color:var(--accent);cursor:pointer;font-weight:400;" onclick="showSection('expense', document.querySelectorAll('.nav-item')[1])">すべて見る</a></div>
+          <div class="tx-item">
+            <div class="tx-icon" style="background:rgba(255,181,71,0.15);">🍜</div>
+            <div class="tx-info">
+              <div class="tx-name">ラーメン一蘭</div>
+              <div class="tx-cat">食費 • <span class="tx-date">本日</span></div>
+            </div>
+            <div class="tx-amount neg">-¥980</div>
+          </div>
+          <div class="tx-item">
+            <div class="tx-icon" style="background:rgba(108,143,255,0.15);">🚃</div>
+            <div class="tx-info">
+              <div class="tx-name">Suica チャージ</div>
+              <div class="tx-cat">交通費 • <span class="tx-date">昨日</span></div>
+            </div>
+            <div class="tx-amount neg">-¥3,000</div>
+          </div>
+          <div class="tx-item">
+            <div class="tx-icon" style="background:rgba(74,240,176,0.15);">💼</div>
+            <div class="tx-info">
+              <div class="tx-name">給与振込</div>
+              <div class="tx-cat">収入 • <span class="tx-date">6/25</span></div>
+            </div>
+            <div class="tx-amount pos">+¥280,000</div>
+          </div>
+          <div class="tx-item">
+            <div class="tx-icon" style="background:rgba(255,95,109,0.15);">🏠</div>
+            <div class="tx-info">
+              <div class="tx-name">家賃</div>
+              <div class="tx-cat">住居費 • <span class="tx-date">6/1</span></div>
+            </div>
+            <div class="tx-amount neg">-¥75,000</div>
+          </div>
+          <div class="tx-item">
+            <div class="tx-icon" style="background:rgba(74,240,176,0.15);">📱</div>
+            <div class="tx-info">
+              <div class="tx-name">楽天モバイル</div>
+              <div class="tx-cat">通信費 • <span class="tx-date">6/3</span></div>
+            </div>
+            <div class="tx-amount neg">-¥1,078</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom row -->
+      <div class="grid-2">
+        <!-- AI Advice preview -->
+        <div class="card">
+          <div class="card-title">💡 今月のAIアドバイス</div>
+          <div class="advice-card">
+            <div class="advice-title">⚠️ 食費が予算の92%に達しています</div>
+            <div class="advice-text">先月より外食が増えています。残り7日で¥2,800の余裕しかありません。自炊を増やすか、コンビニ利用を控えると改善できます。</div>
+          </div>
+          <div class="advice-card">
+            <div class="advice-title">✅ 貯蓄目標まであと少しです</div>
+            <div class="advice-text">今月の貯蓄目標¥60,000まで¥3,200です。現在のペースを維持すれば達成できます。マイホーム購入目標に着実に近づいています！</div>
+          </div>
+          <button class="btn btn-ghost" style="width:100%;margin-top:4px;" onclick="showSection('advice', document.querySelectorAll('.nav-item')[4])">詳細アドバイスを見る →</button>
+        </div>
+
+        <!-- Life goals -->
+        <div class="card">
+          <div class="card-title">🎯 ライフプランの進捗</div>
+          <div class="goal-card">
+            <div class="goal-header">
+              <div class="goal-title">🏠 マイホーム購入 <span class="tag blue">最優先</span></div>
+              <div class="goal-year">2028年（3年後）</div>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text2);margin-bottom:4px;">
+              <span>頭金 ¥500万目標</span><span style="color:var(--accent2);">¥384万 / ¥500万</span>
+            </div>
+            <div class="progress-track">
+              <div class="progress-fill" style="width:76.8%;background:var(--accent2);"></div>
+            </div>
+          </div>
+          <div class="goal-card">
+            <div class="goal-header">
+              <div class="goal-title">👶 第一子誕生 <span class="tag orange">計画中</span></div>
+              <div class="goal-year">2026年（1年後）</div>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text2);margin-bottom:4px;">
+              <span>準備資金 ¥100万目標</span><span style="color:var(--warn);">¥42万 / ¥100万</span>
+            </div>
+            <div class="progress-track">
+              <div class="progress-fill" style="width:42%;background:var(--warn);"></div>
+            </div>
+          </div>
+          <div class="goal-card">
+            <div class="goal-header">
+              <div class="goal-title">🏖️ FIRE達成 <span class="tag green">長期</span></div>
+              <div class="goal-year">2045年（20年後）</div>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text2);margin-bottom:4px;">
+              <span>目標資産 ¥5,000万</span><span style="color:var(--green);">¥384万 / ¥5,000万</span>
+            </div>
+            <div class="progress-track">
+              <div class="progress-fill" style="width:7.7%;background:var(--green);"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- EXPENSE -->
+    <div id="expense" class="section">
+      <div class="page-header">
+        <div>
+          <div class="page-title">支出管理</div>
+          <div class="page-sub">カテゴリ別の支出を確認・登録できます</div>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-ghost">📥 CSVエクスポート</button>
+          <button class="btn btn-primary" onclick="openExpenseModal()">＋ 支出を追加</button>
+        </div>
+      </div>
+
+      <div class="grid-65">
+        <!-- Category breakdown -->
+        <div class="card">
+          <div class="card-title">カテゴリ別支出（6月）</div>
+          <div class="budget-item">
+            <div class="budget-dot" style="background:#ff7eb3;"></div>
+            <div class="budget-name">🏠 住居費</div>
+            <div style="flex:2;">
+              <div class="progress-track"><div class="progress-fill" style="width:100%;background:#ff7eb3;"></div></div>
+            </div>
+            <div class="budget-amounts"><div class="budget-spent">¥75,000</div><div class="budget-limit">/ ¥75,000</div></div>
+            <div class="budget-pct" style="color:var(--red);">100%</div>
+          </div>
+          <div class="budget-item">
+            <div class="budget-dot" style="background:#ffb547;"></div>
+            <div class="budget-name">🍜 食費</div>
+            <div style="flex:2;">
+              <div class="progress-track"><div class="progress-fill" style="width:92%;background:#ffb547;"></div></div>
+            </div>
+            <div class="budget-amounts"><div class="budget-spent">¥27,600</div><div class="budget-limit">/ ¥30,000</div></div>
+            <div class="budget-pct" style="color:var(--warn);">92%</div>
+          </div>
+          <div class="budget-item">
+            <div class="budget-dot" style="background:#6c8fff;"></div>
+            <div class="budget-name">🚃 交通費</div>
+            <div style="flex:2;">
+              <div class="progress-track"><div class="progress-fill" style="width:68%;background:#6c8fff;"></div></div>
+            </div>
+            <div class="budget-amounts"><div class="budget-spent">¥10,200</div><div class="budget-limit">/ ¥15,000</div></div>
+            <div class="budget-pct">68%</div>
+          </div>
+          <div class="budget-item">
+            <div class="budget-dot" style="background:#4af0b0;"></div>
+            <div class="budget-name">🎮 娯楽・趣味</div>
+            <div style="flex:2;">
+              <div class="progress-track"><div class="progress-fill" style="width:45%;background:#4af0b0;"></div></div>
+            </div>
+            <div class="budget-amounts"><div class="budget-spent">¥9,000</div><div class="budget-limit">/ ¥20,000</div></div>
+            <div class="budget-pct" style="color:var(--green);">45%</div>
+          </div>
+          <div class="budget-item">
+            <div class="budget-dot" style="background:#a78bfa;"></div>
+            <div class="budget-name">👕 衣類・日用品</div>
+            <div style="flex:2;">
+              <div class="progress-track"><div class="progress-fill" style="width:60%;background:#a78bfa;"></div></div>
+            </div>
+            <div class="budget-amounts"><div class="budget-spent">¥12,000</div><div class="budget-limit">/ ¥20,000</div></div>
+            <div class="budget-pct">60%</div>
+          </div>
+          <div class="budget-item">
+            <div class="budget-dot" style="background:#2edd8e;"></div>
+            <div class="budget-name">📱 通信費・サブスク</div>
+            <div style="flex:2;">
+              <div class="progress-track"><div class="progress-fill" style="width:55%;background:#2edd8e;"></div></div>
+            </div>
+            <div class="budget-amounts"><div class="budget-spent">¥5,500</div><div class="budget-limit">/ ¥10,000</div></div>
+            <div class="budget-pct">55%</div>
+          </div>
+          <div class="budget-item">
+            <div class="budget-dot" style="background:#60a5fa;"></div>
+            <div class="budget-name">🏥 医療・健康</div>
+            <div style="flex:2;">
+              <div class="progress-track"><div class="progress-fill" style="width:20%;background:#60a5fa;"></div></div>
+            </div>
+            <div class="budget-amounts"><div class="budget-spent">¥2,000</div><div class="budget-limit">/ ¥10,000</div></div>
+            <div class="budget-pct" style="color:var(--green);">20%</div>
+          </div>
+          <div class="budget-item">
+            <div class="budget-dot" style="background:#f97316;"></div>
+            <div class="budget-name">🍺 交際費</div>
+            <div style="flex:2;">
+              <div class="progress-track"><div class="progress-fill" style="width:40%;background:#f97316;"></div></div>
+            </div>
+            <div class="budget-amounts"><div class="budget-spent">¥4,000</div><div class="budget-limit">/ ¥10,000</div></div>
+            <div class="budget-pct" style="color:var(--green);">40%</div>
+          </div>
+        </div>
+
+        <!-- Pie chart -->
+        <div class="card" style="display:flex;flex-direction:column;">
+          <div class="card-title">支出構成</div>
+          <div style="display:flex;align-items:center;justify-content:center;flex:1;padding:10px 0;">
+            <canvas id="pieChart" width="200" height="200"></canvas>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:10px;">
+            <div style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:5px;"><span style="display:block;width:8px;height:8px;border-radius:50%;background:#ff7eb3;"></span>住居 52.4%</div>
+            <div style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:5px;"><span style="display:block;width:8px;height:8px;border-radius:50%;background:#ffb547;"></span>食費 19.3%</div>
+            <div style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:5px;"><span style="display:block;width:8px;height:8px;border-radius:50%;background:#6c8fff;"></span>交通 7.1%</div>
+            <div style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:5px;"><span style="display:block;width:8px;height:8px;border-radius:50%;background:#4af0b0;"></span>娯楽 6.3%</div>
+            <div style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:5px;"><span style="display:block;width:8px;height:8px;border-radius:50%;background:#a78bfa;"></span>衣類 8.4%</div>
+            <div style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:5px;"><span style="display:block;width:8px;height:8px;border-radius:50%;background:#2edd8e;"></span>その他 6.5%</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Transaction list -->
+      <div class="card">
+        <div class="card-title">取引履歴
+          <div style="display:flex;gap:8px;align-items:center;">
+            <input type="text" placeholder="検索..." style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:5px 10px;color:var(--text);font-size:12px;width:140px;outline:none;font-family:inherit;">
+            <select style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:5px 10px;color:var(--text2);font-size:12px;outline:none;font-family:inherit;">
+              <option>すべて</option><option>食費</option><option>住居費</option>
+            </select>
+          </div>
+        </div>
+        <div class="tx-item">
+          <div class="tx-icon" style="background:rgba(255,181,71,0.15);">🍜</div>
+          <div class="tx-info"><div class="tx-name">ラーメン一蘭</div><div class="tx-cat">食費 • 2025/6/29</div></div>
+          <span class="tag orange">食費</span>
+          <div class="tx-amount neg">-¥980</div>
+        </div>
+        <div class="tx-item">
+          <div class="tx-icon" style="background:rgba(108,143,255,0.15);">🚃</div>
+          <div class="tx-info"><div class="tx-name">Suica チャージ</div><div class="tx-cat">交通費 • 2025/6/28</div></div>
+          <span class="tag blue">交通費</span>
+          <div class="tx-amount neg">-¥3,000</div>
+        </div>
+        <div class="tx-item">
+          <div class="tx-icon" style="background:rgba(167,139,250,0.15);">🛒</div>
+          <div class="tx-info"><div class="tx-name">コストコ 日用品</div><div class="tx-cat">日用品 • 2025/6/27</div></div>
+          <span class="tag" style="background:rgba(167,139,250,0.15);color:#a78bfa;">日用品</span>
+          <div class="tx-amount neg">-¥8,500</div>
+        </div>
+        <div class="tx-item">
+          <div class="tx-icon" style="background:rgba(249,115,22,0.15);">🍺</div>
+          <div class="tx-info"><div class="tx-name">居酒屋 同僚と</div><div class="tx-cat">交際費 • 2025/6/26</div></div>
+          <span class="tag orange">交際費</span>
+          <div class="tx-amount neg">-¥4,000</div>
+        </div>
+        <div class="tx-item">
+          <div class="tx-icon" style="background:rgba(74,240,176,0.15);">💼</div>
+          <div class="tx-info"><div class="tx-name">給与振込</div><div class="tx-cat">収入 • 2025/6/25</div></div>
+          <span class="tag green">収入</span>
+          <div class="tx-amount pos">+¥280,000</div>
+        </div>
+        <div class="tx-item">
+          <div class="tx-icon" style="background:rgba(96,165,250,0.15);">🏥</div>
+          <div class="tx-info"><div class="tx-name">歯科クリニック</div><div class="tx-cat">医療費 • 2025/6/22</div></div>
+          <span class="tag blue">医療費</span>
+          <div class="tx-amount neg">-¥2,000</div>
+        </div>
+        <div class="tx-item">
+          <div class="tx-icon" style="background:rgba(255,126,179,0.15);">🏠</div>
+          <div class="tx-info"><div class="tx-name">家賃 6月分</div><div class="tx-cat">住居費 • 2025/6/1</div></div>
+          <span class="tag red">住居費</span>
+          <div class="tx-amount neg">-¥75,000</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BUDGET & GOALS -->
+    <div id="budget" class="section">
+      <div class="page-header">
+        <div>
+          <div class="page-title">予算・目標管理</div>
+          <div class="page-sub">月次予算とライフプランの目標を設定・確認できます</div>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-ghost" onclick="openChat('budget')">🤖 チャットで再設定</button>
+          <button class="btn btn-primary">予算を編集</button>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">月次予算設定</div>
+          <div style="margin-bottom:12px;padding:12px;background:var(--bg);border-radius:var(--radius-sm);display:flex;justify-content:space-between;align-items:center;">
+            <div>
+              <div style="font-size:12px;color:var(--text2);">月収入</div>
+              <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:700;">¥280,000</div>
+            </div>
+            <div style="text-align:right;">
+              <div style="font-size:12px;color:var(--text2);">月貯蓄目標</div>
+              <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:700;color:var(--accent);">¥60,000</div>
+            </div>
+          </div>
+          <div class="budget-item">
+            <div class="budget-dot" style="background:#ff7eb3;"></div>
+            <div class="budget-name">🏠 住居費</div>
+            <div class="budget-amounts"><div class="budget-spent">¥75,000</div></div>
+            <span class="tag" style="background:rgba(255,181,71,0.1);color:var(--warn);font-size:10px;">固定費</span>
+          </div>
+          <div class="budget-item">
+            <div class="budget-dot" style="background:#ffb547;"></div>
+            <div class="budget-name">🍜 食費</div>
+            <div class="budget-amounts"><div class="budget-spent">¥30,000</div></div>
+            <span class="tag" style="background:rgba(74,240,176,0.1);color:var(--green);font-size:10px;">変動費</span>
+          </div>
+          <div class="budget-item">
+            <div class="budget-dot" style="background:#6c8fff;"></div>
+            <div class="budget-name">🚃 交通費</div>
+            <div class="budget-amounts"><div class="budget-spent">¥15,000</div></div>
+            <span class="tag" style="background:rgba(74,240,176,0.1);color:var(--green);font-size:10px;">変動費</span>
+          </div>
+          <div class="budget-item">
+            <div class="budget-dot" style="background:#4af0b0;"></div>
+            <div class="budget-name">🎮 娯楽・趣味</div>
+            <div class="budget-amounts"><div class="budget-spent">¥20,000</div></div>
+            <span class="tag" style="background:rgba(74,240,176,0.1);color:var(--green);font-size:10px;">変動費</span>
+          </div>
+          <div class="budget-item">
+            <div class="budget-dot" style="background:#a78bfa;"></div>
+            <div class="budget-name">👕 衣類・日用品</div>
+            <div class="budget-amounts"><div class="budget-spent">¥20,000</div></div>
+            <span class="tag" style="background:rgba(74,240,176,0.1);color:var(--green);font-size:10px;">変動費</span>
+          </div>
+          <div class="budget-item">
+            <div class="budget-dot" style="background:#2edd8e;"></div>
+            <div class="budget-name">📱 通信・サブスク</div>
+            <div class="budget-amounts"><div class="budget-spent">¥10,000</div></div>
+            <span class="tag" style="background:rgba(255,181,71,0.1);color:var(--warn);font-size:10px;">固定費</span>
+          </div>
+          <div class="budget-item">
+            <div class="budget-dot" style="background:#60a5fa;"></div>
+            <div class="budget-name">🏥 医療・健康</div>
+            <div class="budget-amounts"><div class="budget-spent">¥10,000</div></div>
+            <span class="tag" style="background:rgba(74,240,176,0.1);color:var(--green);font-size:10px;">変動費</span>
+          </div>
+          <div class="budget-item">
+            <div class="budget-dot" style="background:#f97316;"></div>
+            <div class="budget-name">🍺 交際費</div>
+            <div class="budget-amounts"><div class="budget-spent">¥10,000</div></div>
+            <span class="tag" style="background:rgba(74,240,176,0.1);color:var(--green);font-size:10px;">変動費</span>
+          </div>
+          <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);display:flex;justify-content:space-between;">
+            <span style="font-size:13px;color:var(--text2);">予算合計</span>
+            <span style="font-family:'Syne',sans-serif;font-weight:700;color:var(--accent);">¥190,000</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-top:4px;">
+            <span style="font-size:13px;color:var(--text2);">残り（貯蓄 + 積立）</span>
+            <span style="font-family:'Syne',sans-serif;font-weight:700;">¥90,000</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">ライフプラン目標</div>
+          <div class="goal-card">
+            <div class="goal-header">
+              <div class="goal-title">🏠 マイホーム購入</div>
+              <div style="display:flex;gap:6px;">
+                <span class="tag blue">最優先</span>
+                <span style="font-size:11px;color:var(--text2);">2028年目標</span>
+              </div>
+            </div>
+            <div style="font-size:12px;color:var(--text2);line-height:1.7;">目標頭金: <strong style="color:var(--text);">¥500万</strong>　月積立額: <strong style="color:var(--accent2);">¥30,000</strong></div>
+            <div class="progress-track" style="margin-top:8px;"><div class="progress-fill" style="width:76.8%;background:var(--accent2);"></div></div>
+            <div class="goal-amounts"><span>¥384万 貯蓄済み</span><span>達成まで ¥116万</span></div>
+          </div>
+
+          <div class="goal-card">
+            <div class="goal-header">
+              <div class="goal-title">👶 育児準備資金</div>
+              <div style="display:flex;gap:6px;">
+                <span class="tag orange">計画中</span>
+                <span style="font-size:11px;color:var(--text2);">2026年目標</span>
+              </div>
+            </div>
+            <div style="font-size:12px;color:var(--text2);line-height:1.7;">目標額: <strong style="color:var(--text);">¥100万</strong>　月積立額: <strong style="color:var(--warn);">¥15,000</strong></div>
+            <div class="progress-track" style="margin-top:8px;"><div class="progress-fill" style="width:42%;background:var(--warn);"></div></div>
+            <div class="goal-amounts"><span>¥42万 貯蓄済み</span><span>達成まで ¥58万</span></div>
+          </div>
+
+          <div class="goal-card">
+            <div class="goal-header">
+              <div class="goal-title">🏖️ FIRE（早期退職）</div>
+              <div style="display:flex;gap:6px;">
+                <span class="tag green">長期</span>
+                <span style="font-size:11px;color:var(--text2);">2045年目標</span>
+              </div>
+            </div>
+            <div style="font-size:12px;color:var(--text2);line-height:1.7;">目標資産: <strong style="color:var(--text);">¥5,000万</strong>　月積立額: <strong style="color:var(--green);">¥15,000</strong></div>
+            <div class="progress-track" style="margin-top:8px;"><div class="progress-fill" style="width:7.7%;background:var(--green);"></div></div>
+            <div class="goal-amounts"><span>¥384万 達成済み</span><span>達成まで ¥4,616万</span></div>
+          </div>
+
+          <button class="btn btn-ghost" style="width:100%;margin-top:4px;" onclick="openChat('goal')">＋ 新しい目標を追加</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- FUTURE DESIGN -->
+    <div id="future" class="section">
+      <div class="page-header">
+        <div>
+          <div class="page-title">将来設計 & 確率シミュレーション</div>
+          <div class="page-sub">現在の支出・貯蓄パターンを元に目標達成確率を計算しています</div>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-ghost">⚙️ 前提条件を変更</button>
+        </div>
+      </div>
+
+      <div class="grid-3">
+        <div class="card" style="text-align:center;padding:24px 20px;">
+          <div class="card-title" style="justify-content:center;">🏠 マイホーム購入 2028年</div>
+          <div class="gauge-wrap">
+            <div class="gauge-container">
+              <canvas class="gauge" id="gauge1" width="180" height="120"></canvas>
+              <div class="gauge-center"><div class="gauge-pct">76%</div><div class="gauge-label">達成確率</div></div>
+            </div>
+          </div>
+          <div style="font-size:12px;color:var(--text2);margin-top:8px;">現在のペースで<strong style="color:var(--accent);">2027年11月</strong>に達成見込み</div>
+          <div style="margin-top:10px;padding:10px;background:var(--bg);border-radius:var(--radius-sm);">
+            <div style="font-size:11px;color:var(--text2);">月積立+¥5,000で確率が</div>
+            <div style="font-size:14px;color:var(--green);font-weight:700;">76% → 89%</div>
+          </div>
+        </div>
+        <div class="card" style="text-align:center;padding:24px 20px;">
+          <div class="card-title" style="justify-content:center;">👶 育児資金 2026年</div>
+          <div class="gauge-wrap">
+            <div class="gauge-container">
+              <canvas class="gauge" id="gauge2" width="180" height="120"></canvas>
+              <div class="gauge-center"><div class="gauge-pct" style="color:var(--warn);">52%</div><div class="gauge-label">達成確率</div></div>
+            </div>
+          </div>
+          <div style="font-size:12px;color:var(--text2);margin-top:8px;">現在のペースでは<strong style="color:var(--red);">¥18万不足</strong>の見込み</div>
+          <div style="margin-top:10px;padding:10px;background:rgba(255,181,71,0.08);border-radius:var(--radius-sm);border:1px solid rgba(255,181,71,0.2);">
+            <div style="font-size:11px;color:var(--warn);">⚠️ 月積立を¥8,000増やすことを推奨</div>
+          </div>
+        </div>
+        <div class="card" style="text-align:center;padding:24px 20px;">
+          <div class="card-title" style="justify-content:center;">🏖️ FIRE 2045年</div>
+          <div class="gauge-wrap">
+            <div class="gauge-container">
+              <canvas class="gauge" id="gauge3" width="180" height="120"></canvas>
+              <div class="gauge-center"><div class="gauge-pct" style="color:var(--accent2);">63%</div><div class="gauge-label">達成確率</div></div>
+            </div>
+          </div>
+          <div style="font-size:12px;color:var(--text2);margin-top:8px;">投資利回り想定: <strong style="color:var(--accent2);">年5%（インデックス）</strong></div>
+          <div style="margin-top:10px;padding:10px;background:var(--bg);border-radius:var(--radius-sm);">
+            <div style="font-size:11px;color:var(--text2);">投資比率を上げることで</div>
+            <div style="font-size:14px;color:var(--green);font-weight:700;">63% → 78%</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Asset projection chart -->
+      <div class="card" style="margin-bottom:20px;">
+        <div class="card-title">
+          資産推移シミュレーション（確率モデル）
+          <div style="display:flex;gap:8px;align-items:center;">
+            <span style="font-size:11px;color:var(--text2);">モンテカルロ法 1000回試行</span>
+          </div>
+        </div>
+        <div class="chart-area" style="height:240px;">
+          <canvas class="chart" id="projectionChart"></canvas>
+        </div>
+        <div style="display:flex;gap:16px;margin-top:12px;font-size:12px;color:var(--text2);">
+          <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:rgba(74,240,176,0.3);margin-right:5px;"></span>90%信頼区間</span>
+          <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:rgba(74,240,176,0.6);margin-right:5px;"></span>中央値（50%）</span>
+          <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--accent2);margin-right:5px;"></span>目標ライン</span>
+        </div>
+      </div>
+
+      <!-- Breakdown -->
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">シナリオ比較</div>
+          <div style="overflow-x:auto;">
+            <table style="width:100%;border-collapse:collapse;font-size:13px;">
+              <thead>
+                <tr style="color:var(--text2);font-size:11px;letter-spacing:0.5px;">
+                  <th style="text-align:left;padding:8px 0;font-weight:600;">シナリオ</th>
+                  <th style="text-align:right;padding:8px 0;font-weight:600;">35歳資産</th>
+                  <th style="text-align:right;padding:8px 0;font-weight:600;">FIRE達成</th>
+                  <th style="text-align:right;padding:8px 0;font-weight:600;">確率</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr style="border-top:1px solid var(--border);">
+                  <td style="padding:10px 0;">現状維持</td>
+                  <td style="padding:10px 0;text-align:right;font-weight:500;">¥1,280万</td>
+                  <td style="padding:10px 0;text-align:right;">2048年</td>
+                  <td style="padding:10px 0;text-align:right;"><span class="tag orange">63%</span></td>
+                </tr>
+                <tr style="border-top:1px solid var(--border);">
+                  <td style="padding:10px 0;color:var(--accent);">食費削減 (-¥5,000)</td>
+                  <td style="padding:10px 0;text-align:right;font-weight:500;color:var(--green);">¥1,460万</td>
+                  <td style="padding:10px 0;text-align:right;">2046年</td>
+                  <td style="padding:10px 0;text-align:right;"><span class="tag green">71%</span></td>
+                </tr>
+                <tr style="border-top:1px solid var(--border);">
+                  <td style="padding:10px 0;color:var(--accent);">副収入 +¥30,000/月</td>
+                  <td style="padding:10px 0;text-align:right;font-weight:500;color:var(--green);">¥1,840万</td>
+                  <td style="padding:10px 0;text-align:right;">2043年</td>
+                  <td style="padding:10px 0;text-align:right;"><span class="tag green">82%</span></td>
+                </tr>
+                <tr style="border-top:1px solid var(--border);">
+                  <td style="padding:10px 0;color:var(--text2);">悲観シナリオ</td>
+                  <td style="padding:10px 0;text-align:right;font-weight:500;color:var(--red);">¥820万</td>
+                  <td style="padding:10px 0;text-align:right;color:var(--red);">2055年+</td>
+                  <td style="padding:10px 0;text-align:right;"><span class="tag red">34%</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">前提条件</div>
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:10px;background:var(--bg);border-radius:var(--radius-sm);">
+              <span style="font-size:13px;">年齢</span><span style="font-weight:600;">30歳</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:10px;background:var(--bg);border-radius:var(--radius-sm);">
+              <span style="font-size:13px;">月収入（税引後）</span><span style="font-weight:600;">¥280,000</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:10px;background:var(--bg);border-radius:var(--radius-sm);">
+              <span style="font-size:13px;">年収上昇率（想定）</span><span style="font-weight:600;color:var(--accent);">3% / 年</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:10px;background:var(--bg);border-radius:var(--radius-sm);">
+              <span style="font-size:13px;">投資利回り（想定）</span><span style="font-weight:600;color:var(--accent2);">5% / 年</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:10px;background:var(--bg);border-radius:var(--radius-sm);">
+              <span style="font-size:13px;">インフレ率（想定）</span><span style="font-weight:600;">2% / 年</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:10px;background:var(--bg);border-radius:var(--radius-sm);">
+              <span style="font-size:13px;">月投資額（現在）</span><span style="font-weight:600;color:var(--green);">¥15,000</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ADVICE -->
+    <div id="advice" class="section">
+      <div class="page-header">
+        <div>
+          <div class="page-title">AIパーソナルアドバイス</div>
+          <div class="page-sub">過去の支出履歴とライフプランを踏まえた個別アドバイスです</div>
+        </div>
+      </div>
+
+      <div class="grid-65">
+        <div>
+          <div class="card" style="margin-bottom:16px;">
+            <div class="card-title">🚨 緊急アクション（今月中）</div>
+            <div class="advice-card" style="border-color:rgba(255,95,109,0.2);background:rgba(255,95,109,0.05);">
+              <div class="advice-title" style="color:var(--red);">⚠️ 育児準備資金の積立が不足しています</div>
+              <div class="advice-text">2026年の第一子誕生に向けて、現在の積立ペース（¥15,000/月）では¥18万不足する見込みです。来月から¥23,000/月に増額することをお勧めします。食費予算を¥5,000削減し、娯楽費を¥3,000抑えることで達成可能です。</div>
+            </div>
+            <div class="advice-card" style="border-color:rgba(255,181,71,0.2);background:rgba(255,181,71,0.05);">
+              <div class="advice-title" style="color:var(--warn);">📊 食費が2ヶ月連続で予算超過しています</div>
+              <div class="advice-text">3月（+¥3,200）、4月（+¥5,100）と連続超過中です。外食の回数が先月比30%増えています。週3回の自炊に切り替えるだけで月¥8,000以上の節約が可能です。</div>
+            </div>
+          </div>
+
+          <div class="card" style="margin-bottom:16px;">
+            <div class="card-title">💡 改善提案（今月〜3ヶ月）</div>
+            <div class="advice-card">
+              <div class="advice-title">📱 サブスクを見直すと月¥3,400節約できます</div>
+              <div class="advice-text">現在: Netflix(¥1,490) + Spotify(¥980) + Amazon Prime(¥600) + 他3サービス。分析の結果、Netflix利用頻度が月2回以下です。一時停止して年間¥17,880の節約を検討してみてはいかがでしょうか。</div>
+            </div>
+            <div class="advice-card">
+              <div class="advice-title">🏠 住居費の見直しでマイホーム達成が2ヶ月早まります</div>
+              <div class="advice-text">現在の家賃(¥75,000)は手取りの26.8%です。近隣の同条件物件の相場を調べると¥65,000〜70,000の物件もあります。月¥5,000の削減で頭金達成が2027年9月→7月に早まります。</div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">✅ 継続できていること（良い点）</div>
+            <div class="advice-card" style="border-color:rgba(46,221,142,0.2);background:rgba(46,221,142,0.05);">
+              <div class="advice-title" style="color:var(--green);">🎉 通信費の最適化ができています</div>
+              <div class="advice-text">楽天モバイルへの乗り換えで月¥5,000以上の節約を継続中。1年間で¥60,000以上の節約実績があります。この姿勢を食費にも活かしましょう。</div>
+            </div>
+            <div class="advice-card" style="border-color:rgba(46,221,142,0.2);background:rgba(46,221,142,0.05);">
+              <div class="advice-title" style="color:var(--green);">📈 貯蓄習慣が定着しています</div>
+              <div class="advice-text">過去6ヶ月連続で貯蓄目標の90%以上を達成しています。マイホーム頭金目標まで着実に進んでいます。このペースを維持してください！</div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="card" style="margin-bottom:16px;">
+            <div class="card-title">📊 今月のスコア</div>
+            <div style="text-align:center;padding:20px 0;">
+              <div style="font-family:'Syne',sans-serif;font-size:64px;font-weight:800;line-height:1;background:linear-gradient(135deg, var(--accent), var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;">72</div>
+              <div style="font-size:13px;color:var(--text2);margin-top:4px;">/ 100点</div>
+              <div style="margin-top:12px;font-size:12px;color:var(--text2);">先月比 <strong style="color:var(--green);">+5点</strong> 改善中！</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px;">
+              <div>
+                <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;"><span>支出管理</span><span style="color:var(--warn);">65/100</span></div>
+                <div class="progress-track"><div class="progress-fill" style="width:65%;background:var(--warn);"></div></div>
+              </div>
+              <div>
+                <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;"><span>貯蓄達成率</span><span style="color:var(--accent);">95/100</span></div>
+                <div class="progress-track"><div class="progress-fill" style="width:95%;background:var(--accent);"></div></div>
+              </div>
+              <div>
+                <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;"><span>目標進捗</span><span style="color:var(--accent2);">70/100</span></div>
+                <div class="progress-track"><div class="progress-fill" style="width:70%;background:var(--accent2);"></div></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">📅 来月の目標</div>
+            <div style="display:flex;flex-direction:column;gap:8px;">
+              <div style="padding:12px;background:var(--bg);border-radius:var(--radius-sm);border-left:3px solid var(--accent);">
+                <div style="font-size:13px;font-weight:500;">食費を¥27,000以内に</div>
+                <div style="font-size:11px;color:var(--text2);margin-top:3px;">外食を週2回以内に制限</div>
+              </div>
+              <div style="padding:12px;background:var(--bg);border-radius:var(--radius-sm);border-left:3px solid var(--accent2);">
+                <div style="font-size:13px;font-weight:500;">育児積立を¥23,000に</div>
+                <div style="font-size:11px;color:var(--text2);margin-top:3px;">先月から+¥8,000増額</div>
+              </div>
+              <div style="padding:12px;background:var(--bg);border-radius:var(--radius-sm);border-left:3px solid var(--warn);">
+                <div style="font-size:13px;font-weight:500;">Netflix停止を検討</div>
+                <div style="font-size:11px;color:var(--text2);margin-top:3px;">月¥1,490の節約になります</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- Chat Setup Overlay -->
+<div class="chat-overlay" id="chatOverlay">
+  <div class="chat-modal">
+    <div class="chat-header">
+      <div>
+        <h3>🤖 LifeBalance アシスタント</h3>
+        <div style="font-size:12px;color:var(--text2);margin-top:2px;">チャット形式で設定をサポートします</div>
+      </div>
+      <button class="close-btn" onclick="closeChat()">✕</button>
+    </div>
+    <div class="chat-body" id="chatBody">
+      <div class="msg bot">
+        <div class="msg-avatar">🤖</div>
+        <div>
+          <div class="msg-bubble">こんにちは！LifeBalanceへようこそ。まずあなたのライフプランについていくつか教えてください。現在の状況を確認しながら、最適な予算と目標を一緒に設定しましょう。</div>
+          <div class="msg-options">
+            <button class="msg-opt" onclick="sendMsg(this, '初期設定を始める')">初期設定を始める</button>
+            <button class="msg-opt" onclick="sendMsg(this, '目標を変更したい')">目標を変更したい</button>
+            <button class="msg-opt" onclick="sendMsg(this, '予算を見直したい')">予算を見直したい</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="chat-input-area">
+      <input class="chat-input" id="chatInput" placeholder="メッセージを入力..." onkeydown="if(event.key==='Enter')sendChatInput()">
+      <button class="btn btn-primary" onclick="sendChatInput()">送信</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Expense Overlay -->
+<div class="chat-overlay" id="expenseOverlay">
+  <div class="expense-modal">
+    <div class="chat-header">
+      <h3>💳 支出を追加</h3>
+      <button class="close-btn" onclick="closeExpenseModal()">✕</button>
+    </div>
+    <div style="padding:20px 24px;">
+      <div class="form-group">
+        <label class="form-label">金額</label>
+        <input class="form-input" type="number" placeholder="0" style="font-size:24px;font-family:'Syne',sans-serif;font-weight:700;">
+      </div>
+      <div class="form-group">
+        <label class="form-label">カテゴリ</label>
+        <div class="cat-grid">
+          <div class="cat-chip sel"><span>🍜</span>食費</div>
+          <div class="cat-chip"><span>🏠</span>住居費</div>
+          <div class="cat-chip"><span>🚃</span>交通費</div>
+          <div class="cat-chip"><span>🎮</span>娯楽</div>
+          <div class="cat-chip"><span>👕</span>衣類</div>
+          <div class="cat-chip"><span>📱</span>通信費</div>
+          <div class="cat-chip"><span>🏥</span>医療</div>
+          <div class="cat-chip"><span>🍺</span>交際費</div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">メモ（任意）</label>
+        <input class="form-input" type="text" placeholder="例: ランチ、コンビニ...">
+      </div>
+      <div class="form-group">
+        <label class="form-label">日付</label>
+        <input class="form-input" type="date" value="2025-06-29">
+      </div>
+      <div style="display:flex;gap:10px;margin-top:4px;">
+        <button class="btn btn-ghost" style="flex:1;" onclick="closeExpenseModal()">キャンセル</button>
+        <button class="btn btn-primary" style="flex:2;" onclick="addExpense()">追加する</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Navigation
+  function showSection(id, el) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    if (el) el.classList.add('active');
+    if (id === 'future') drawProjectionChart();
+    if (id === 'expense') drawPieChart();
+  }
+
+  // Charts
+  function drawTrendChart() {
+    const canvas = document.getElementById('trendChart');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    canvas.width = canvas.offsetWidth * devicePixelRatio;
+    canvas.height = canvas.offsetHeight * devicePixelRatio;
+    ctx.scale(devicePixelRatio, devicePixelRatio);
+    const w = canvas.offsetWidth, h = canvas.offsetHeight;
+
+    const months = ['4月','5月','6月'];
+    const spending = [168000, 134900, 143200];
+    const savings = [52000, 65100, 56800];
+    const budget = [180000, 180000, 180000];
+    const maxV = 210000;
+
+    ctx.clearRect(0,0,w,h);
+    const pad = { l:40, r:20, t:10, b:24 };
+    const cw = w - pad.l - pad.r;
+    const ch = h - pad.t - pad.b;
+
+    function xPos(i) { return pad.l + (i / (months.length - 1)) * cw; }
+    function yPos(v) { return pad.t + ch - (v / maxV) * ch; }
+
+    // Grid
+    [0, 0.25, 0.5, 0.75, 1].forEach(f => {
+      const y = pad.t + ch * (1 - f);
+      ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(w - pad.r, y); ctx.stroke();
+      ctx.fillStyle = 'rgba(255,255,255,0.25)';
+      ctx.font = '10px Noto Sans JP';
+      ctx.fillText('¥' + ((maxV * f) / 10000).toFixed(0) + '万', 0, y + 3);
+    });
+
+    function drawLine(data, color, dashed) {
+      ctx.beginPath();
+      if (dashed) ctx.setLineDash([5,4]); else ctx.setLineDash([]);
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2.5;
+      ctx.lineJoin = 'round';
+      data.forEach((v,i) => { i===0 ? ctx.moveTo(xPos(i),yPos(v)) : ctx.lineTo(xPos(i),yPos(v)); });
+      ctx.stroke();
+      ctx.setLineDash([]);
+      data.forEach((v,i) => {
+        ctx.beginPath();
+        ctx.arc(xPos(i), yPos(v), 4, 0, Math.PI*2);
+        ctx.fillStyle = color;
+        ctx.fill();
+      });
+    }
+    drawLine(budget, 'rgba(255,181,71,0.6)', true);
+    drawLine(savings, '#6c8fff', false);
+    drawLine(spending, '#4af0b0', false);
+
+    // Month labels
+    months.forEach((m,i) => {
+      ctx.fillStyle = 'rgba(255,255,255,0.4)';
+      ctx.font = '11px Noto Sans JP';
+      ctx.textAlign = 'center';
+      ctx.fillText(m, xPos(i), h - 4);
+    });
+  }
+
+  function drawPieChart() {
+    const canvas = document.getElementById('pieChart');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const size = 200;
+    canvas.width = size * devicePixelRatio;
+    canvas.height = size * devicePixelRatio;
+    ctx.scale(devicePixelRatio, devicePixelRatio);
+
+    const data = [
+      { v: 75000, c: '#ff7eb3' },
+      { v: 27600, c: '#ffb547' },
+      { v: 10200, c: '#6c8fff' },
+      { v: 9000, c: '#4af0b0' },
+      { v: 12000, c: '#a78bfa' },
+      { v: 9400, c: '#2edd8e' },
+    ];
+    const total = data.reduce((a,b)=>a+b.v,0);
+    let angle = -Math.PI/2;
+    const cx = size/2, cy = size/2, r = 80, inner = 52;
+
+    data.forEach(d => {
+      const sweep = (d.v / total) * Math.PI * 2;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.arc(cx, cy, r, angle, angle + sweep);
+      ctx.closePath();
+      ctx.fillStyle = d.c;
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(cx, cy, inner, 0, Math.PI*2);
+      ctx.fillStyle = '#131929';
+      ctx.fill();
+      angle += sweep;
+    });
+  }
+
+  function drawGauge(id, pct, color) {
+    const canvas = document.getElementById(id);
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    canvas.width = 180 * devicePixelRatio;
+    canvas.height = 120 * devicePixelRatio;
+    ctx.scale(devicePixelRatio, devicePixelRatio);
+
+    const cx = 90, cy = 90, r = 70;
+    const startA = Math.PI, endA = 2 * Math.PI;
+
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, startA, endA);
+    ctx.strokeStyle = 'rgba(255,255,255,0.07)';
+    ctx.lineWidth = 14;
+    ctx.lineCap = 'round';
+    ctx.stroke();
+
+    const fillEnd = startA + (pct / 100) * Math.PI;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, startA, fillEnd);
+    ctx.strokeStyle = color || '#4af0b0';
+    ctx.lineWidth = 14;
+    ctx.lineCap = 'round';
+    ctx.stroke();
+  }
+
+  function drawProjectionChart() {
+    const canvas = document.getElementById('projectionChart');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    canvas.width = canvas.offsetWidth * devicePixelRatio;
+    canvas.height = canvas.offsetHeight * devicePixelRatio;
+    ctx.scale(devicePixelRatio, devicePixelRatio);
+    const w = canvas.offsetWidth, h = canvas.offsetHeight;
+
+    const years = [2025,2028,2031,2034,2037,2040,2043,2045];
+    const median = [384, 720, 1200, 1900, 2800, 3700, 4600, 5200];
+    const high = [384, 900, 1600, 2600, 3900, 5100, 6500, 7500];
+    const low = [384, 520, 820, 1200, 1700, 2100, 2600, 3000];
+    const target = [5000, 5000, 5000, 5000, 5000, 5000, 5000, 5000];
+    const maxV = 8000;
+
+    const pad = {l:50,r:20,t:10,b:28};
+    const cw = w - pad.l - pad.r;
+    const ch = h - pad.t - pad.b;
+
+    function xP(i) { return pad.l + (i/(years.length-1))*cw; }
+    function yP(v) { return pad.t + ch - (v/maxV)*ch; }
+
+    ctx.clearRect(0,0,w,h);
+
+    // Grid
+    [0,.25,.5,.75,1].forEach(f=>{
+      const y = pad.t + ch*(1-f);
+      ctx.strokeStyle='rgba(255,255,255,0.04)';ctx.lineWidth=1;
+      ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(w-pad.r,y);ctx.stroke();
+      ctx.fillStyle='rgba(255,255,255,0.25)';ctx.font='10px Noto Sans JP';ctx.textAlign='right';
+      ctx.fillText('¥'+(maxV*f/100).toFixed(0)+'百万',pad.l-4,y+3);
+    });
+
+    // Confidence band
+    ctx.beginPath();
+    high.forEach((v,i)=>i===0?ctx.moveTo(xP(i),yP(v)):ctx.lineTo(xP(i),yP(v)));
+    low.slice().reverse().forEach((v,i)=>ctx.lineTo(xP(low.length-1-i),yP(v)));
+    ctx.closePath();
+    ctx.fillStyle='rgba(74,240,176,0.08)';
+    ctx.fill();
+
+    function line(data,color,dash,lw) {
+      ctx.beginPath();
+      if(dash)ctx.setLineDash(dash);else ctx.setLineDash([]);
+      ctx.strokeStyle=color;ctx.lineWidth=lw||2;ctx.lineJoin='round';
+      data.forEach((v,i)=>i===0?ctx.moveTo(xP(i),yP(v)):ctx.lineTo(xP(i),yP(v)));
+      ctx.stroke();ctx.setLineDash([]);
+    }
+    line(target,'rgba(108,143,255,0.5)',[6,4],1.5);
+    line(high,'rgba(74,240,176,0.3)',null,1.5);
+    line(low,'rgba(74,240,176,0.3)',null,1.5);
+    line(median,'rgba(74,240,176,0.9)',null,2.5);
+
+    median.forEach((v,i)=>{
+      ctx.beginPath();ctx.arc(xP(i),yP(v),3.5,0,Math.PI*2);
+      ctx.fillStyle='#4af0b0';ctx.fill();
+    });
+
+    years.forEach((y,i)=>{
+      ctx.fillStyle='rgba(255,255,255,0.3)';ctx.font='10px Noto Sans JP';ctx.textAlign='center';
+      ctx.fillText(y,xP(i),h-6);
+    });
+  }
+
+  // Chat
+  const chatResponses = {
+    '初期設定を始める': {
+      text: 'まず基本情報を教えてください。現在の月収（税引後）はおよそいくらですか？',
+      opts: ['¥20〜25万', '¥25〜30万', '¥30〜40万', '¥40万以上']
+    },
+    '¥25〜30万': {
+      text: 'ありがとうございます。次に、最も重要なライフイベントを教えてください。',
+      opts: ['マイホーム購入', '結婚・育児', '早期退職（FIRE）', '留学・キャリアチェンジ']
+    },
+    'マイホーム購入': {
+      text: '素晴らしい目標ですね！マイホーム購入の目標年は？また、用意できる頭金の目安はありますか？',
+      opts: ['3年以内・¥300万〜', '5年以内・¥500万〜', '10年以内・¥1,000万〜', 'まだ未定']
+    },
+    '3年以内・¥300万〜': {
+      text: '了解しました！月¥35,000の積立でちょうど間に合います。食費は¥28,000、娯楽費は¥18,000を上限に設定しましょうか？この内容で保存してよいですか？',
+      opts: ['✅ この内容で保存する', '🔧 一部変更したい']
+    },
+    '✅ この内容で保存する': {
+      text: '🎉 設定完了です！ダッシュボードに反映されました。毎月末にアドバイスをLINEでお送りします。頑張りましょう！',
+      opts: []
+    },
+    '目標を変更したい': {
+      text: 'どの目標を変更しますか？',
+      opts: ['マイホーム購入の時期', '育児準備資金', 'FIRE目標額', '新しい目標を追加']
+    },
+    '予算を見直したい': {
+      text: 'どのカテゴリの予算を変更したいですか？',
+      opts: ['食費', '娯楽・趣味', '交際費', 'すべて見直したい']
+    }
+  };
+
+  function sendMsg(btn, text) {
+    const body = document.getElementById('chatBody');
+    const userMsg = document.createElement('div');
+    userMsg.className = 'msg user';
+    userMsg.innerHTML = `<div class="msg-bubble">${text}</div>`;
+    body.appendChild(userMsg);
+
+    btn.parentElement.querySelectorAll('.msg-opt').forEach(b => b.disabled = true);
+
+    setTimeout(() => {
+      const resp = chatResponses[text];
+      if (!resp) return;
+      const botMsg = document.createElement('div');
+      botMsg.className = 'msg bot';
+      const optsHtml = resp.opts.map(o => `<button class="msg-opt" onclick="sendMsg(this, '${o}')">${o}</button>`).join('');
+      botMsg.innerHTML = `<div class="msg-avatar">🤖</div><div><div class="msg-bubble">${resp.text}</div><div class="msg-options">${optsHtml}</div></div>`;
+      body.appendChild(botMsg);
+      body.scrollTop = body.scrollHeight;
+    }, 600);
+
+    body.scrollTop = body.scrollHeight;
+  }
+
+  function sendChatInput() {
+    const input = document.getElementById('chatInput');
+    const v = input.value.trim();
+    if (!v) return;
+    const body = document.getElementById('chatBody');
+    const userMsg = document.createElement('div');
+    userMsg.className = 'msg user';
+    userMsg.innerHTML = `<div class="msg-bubble">${v}</div>`;
+    body.appendChild(userMsg);
+    input.value = '';
+    setTimeout(() => {
+      const botMsg = document.createElement('div');
+      botMsg.className = 'msg bot';
+      botMsg.innerHTML = `<div class="msg-avatar">🤖</div><div><div class="msg-bubble">承知しました。現在の情報を元に最適なプランを再計算します。少しお待ちください...</div></div>`;
+      body.appendChild(botMsg);
+      body.scrollTop = body.scrollHeight;
+    }, 500);
+  }
+
+  function openChat(type) { document.getElementById('chatOverlay').classList.add('open'); }
+  function closeChat() { document.getElementById('chatOverlay').classList.remove('open'); }
+  function openExpenseModal() { document.getElementById('expenseOverlay').classList.add('open'); }
+  function closeExpenseModal() { document.getElementById('expenseOverlay').classList.remove('open'); }
+
+  function addExpense() {
+    closeExpenseModal();
+    // Success feedback
+    const toast = document.createElement('div');
+    toast.style.cssText = 'position:fixed;bottom:24px;right:24px;background:#1a2235;border:1px solid rgba(74,240,176,0.3);color:#4af0b0;padding:12px 20px;border-radius:12px;font-size:13px;font-weight:500;z-index:999;animation:fadeUp 0.3s ease;';
+    toast.textContent = '✅ 支出を追加しました';
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+  }
+
+  function switchChart(period) {
+    document.querySelectorAll('[id^="tab"]').forEach(t => t.classList.remove('active'));
+    document.getElementById('tab'+period).classList.add('active');
+    drawTrendChart();
+  }
+
+  // Cat chips
+  document.querySelectorAll('.cat-chip').forEach(chip => {
+    chip.addEventListener('click', function() {
+      document.querySelectorAll('.cat-chip').forEach(c => c.classList.remove('sel'));
+      this.classList.add('sel');
+    });
+  });
+
+  // Close on backdrop
+  ['chatOverlay','expenseOverlay'].forEach(id => {
+    document.getElementById(id).addEventListener('click', function(e) {
+      if (e.target === this) this.classList.remove('open');
+    });
+  });
+
+  // Init
+  window.addEventListener('load', () => {
+    setTimeout(drawTrendChart, 100);
+    drawGauge('gauge1', 76, '#4af0b0');
+    drawGauge('gauge2', 52, '#ffb547');
+    drawGauge('gauge3', 63, '#6c8fff');
+  });
+  window.addEventListener('resize', drawTrendChart);
+</script>
+</body>
+</html>
