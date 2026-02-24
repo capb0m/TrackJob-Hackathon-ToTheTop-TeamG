@@ -44,6 +44,13 @@ export function useTransactionSummary(yearMonth = getCurrentYearMonth()) {
   })
 }
 
+export function useTransactionTrend(range: '1m' | '3m' | '1y') {
+  return useQuery({
+    queryKey: queryKeys.transactionTrend(range),
+    queryFn: () => transactionsApi.trend(range),
+  })
+}
+
 export function useRecordingStreak() {
   const query = useQuery({
     queryKey: queryKeys.transactionStreak(),

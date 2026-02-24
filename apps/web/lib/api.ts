@@ -180,6 +180,10 @@ export const transactionsApi = {
       })}`,
     ),
   streak: () => apiRequest<{ streak_days: number }>('/api/transactions/streak'),
+  trend: (range: '1m' | '3m' | '1y') =>
+    apiRequest<Array<{ label: string; expense: number; saving: number }>>(
+      `/api/transactions/trend${createQueryString({ range })}`,
+    ),
   uploadReceipt: async (file: File) => {
     const formData = new FormData()
     formData.append('file', file)

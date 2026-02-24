@@ -1,7 +1,6 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { useQueries } from '@tanstack/react-query'
 
 import { TrendChart } from '@/components/charts/TrendChart'
 import { AddExpenseModal } from '@/components/modals/AddExpenseModal'
@@ -11,47 +10,24 @@ import { Tabs } from '@/components/ui/tabs'
 import { useAdvice } from '@/hooks/useAdvice'
 import { useBudgets } from '@/hooks/useBudgets'
 import { useGoals } from '@/hooks/useGoals'
-import { useRecordingStreak, useTransactions, useTransactionSummary } from '@/hooks/useTransactions'
-import { transactionsApi } from '@/lib/api'
-import { queryKeys } from '@/lib/query-keys'
+import { useRecordingStreak, useTransactionTrend, useTransactions, useTransactionSummary } from '@/hooks/useTransactions'
 import { formatCurrency, formatPercent, getCurrentYearMonth } from '@/lib/utils'
 import { useChatWizardStore } from '@/stores/chatWizardStore'
 
 const tabs = [
+  { value: '1m', label: '1ヶ月' },
   { value: '3m', label: '3ヶ月' },
-  { value: '6m', label: '6ヶ月' },
   { value: '1y', label: '1年' },
-] 
+]
 
-type RangeKey = '3m' | '6m' | '1y'
-
-function rangeToCount(range: RangeKey) {
-  switch (range) {
-    case '3m':
-      return 3
-    case '6m':
-      return 6
-    default:
-      return 12
-  }
-}
-
-function buildYearMonthList(count: number) {
-  const now = new Date()
-  return Array.from({ length: count }).map((_, index) => {
-    const monthsBack = count - index - 1
-    const date = new Date(now.getFullYear(), now.getMonth() - monthsBack, 1)
-    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
-  })
-}
+type RangeKey = '1m' | '3m' | '1y'
 
 export default function DashboardPage() {
-  const [range, setRange] = useState<RangeKey>('3m')
+  const [range, setRange] = useState<RangeKey>('1m')
   const [expenseModalOpen, setExpenseModalOpen] = useState(false)
   const openChat = useChatWizardStore((state) => state.open)
 
   const currentYearMonth = getCurrentYearMonth()
-  const months = useMemo(() => buildYearMonthList(rangeToCount(range)), [range])
 
   const { data: currentSummary, isLoading: summaryLoading } = useTransactionSummary(currentYearMonth)
   const { streakDays } = useRecordingStreak()
@@ -66,25 +42,15 @@ export default function DashboardPage() {
   })
   const { advice, loading: adviceLoading } = useAdvice()
 
-  const trendQueries = useQueries({
-    queries: months.map((yearMonth) => ({
-      queryKey: queryKeys.transactionSummary(yearMonth),
-      queryFn: () => transactionsApi.summary(yearMonth),
-    })),
-  })
+  const { data: rawTrendData } = useTransactionTrend(range)
 
   const trendData = useMemo(
     () =>
-      months.map((yearMonth, index) => {
-        const data = trendQueries[index]?.data
-        return {
-          month: `${Number(yearMonth.slice(5))}月`,
-          expense: data?.total_expense ?? 0,
-          saving: data?.net_saving ?? 0,
-          budget: budgetSummary?.total_budget ?? 0,
-        }
-      }),
-    [budgetSummary?.total_budget, months, trendQueries],
+      (rawTrendData ?? []).map((point) => ({
+        ...point,
+        budget: budgetSummary?.total_budget ?? 0,
+      })),
+    [rawTrendData, budgetSummary?.total_budget],
   )
 
   const savingTarget = useMemo(

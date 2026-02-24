@@ -1,11 +1,13 @@
 import {
   createTransaction,
   deleteTransactionById,
+  getMonthlyTrend,
   getRecordingStreak,
   getSpentAmountsByCategory,
   getTransactionById,
   getTransactionSummary,
   getTotalSpent,
+  getWeeklyTrend,
   listTransactions,
   updateTransactionById,
 } from '../db/repositories/transactions'
@@ -226,6 +228,36 @@ export async function uploadReceiptImage(userId: string, file: File) {
 export async function getRecordingStreakDays(userId: string) {
   const streakDays = await getRecordingStreak(userId)
   return { streak_days: streakDays }
+}
+
+export async function getTransactionTrend(userId: string, range: '1m' | '3m' | '1y') {
+  const now = new Date()
+
+  if (range === '1y') {
+    const since = new Date(now)
+    since.setUTCMonth(since.getUTCMonth() - 12)
+    const sinceDate = since.toISOString().slice(0, 10)
+    const rows = await getMonthlyTrend(userId, sinceDate)
+    return rows.map((row) => ({
+      label: `${Number(row.yearMonth.slice(5))}月`,
+      expense: row.expense,
+      saving: row.income - row.expense,
+    }))
+  }
+
+  const days = range === '1m' ? 28 : 91
+  const since = new Date(now)
+  since.setUTCDate(since.getUTCDate() - days)
+  const sinceDate = since.toISOString().slice(0, 10)
+  const rows = await getWeeklyTrend(userId, sinceDate)
+  return rows.map((row) => {
+    const [, m, d] = row.weekStart.split('-')
+    return {
+      label: `${Number(m)}/${Number(d)}`,
+      expense: row.expense,
+      saving: row.income - row.expense,
+    }
+  })
 }
 
 export async function getBudgetSpentSummary(userId: string, yearMonth: string) {

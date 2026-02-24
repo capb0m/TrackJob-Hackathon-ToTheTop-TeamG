@@ -3,10 +3,10 @@
 import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 
 interface TrendPoint {
-  month: string
+  label: string
   expense: number
   saving: number
-  budget: number
+  budget?: number
 }
 
 interface TrendChartProps {
@@ -19,7 +19,7 @@ export function TrendChart({ data }: TrendChartProps) {
       <ResponsiveContainer>
         <LineChart data={data}>
           <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" />
-          <XAxis dataKey="month" stroke="#7a8aaa" fontSize={12} />
+          <XAxis dataKey="label" stroke="#7a8aaa" fontSize={12} />
           <YAxis stroke="#7a8aaa" fontSize={12} />
           <Tooltip
             contentStyle={{
@@ -31,7 +31,9 @@ export function TrendChart({ data }: TrendChartProps) {
           <Legend />
           <Line type="monotone" dataKey="expense" stroke="#4af0b0" strokeWidth={2} dot={false} name="支出" />
           <Line type="monotone" dataKey="saving" stroke="#6c8fff" strokeWidth={2} dot={false} name="貯蓄" />
-          <Line type="monotone" dataKey="budget" stroke="#ffb547" strokeWidth={2} dot={false} name="予算上限" />
+          {data.some((d) => d.budget !== undefined) && (
+            <Line type="monotone" dataKey="budget" stroke="#ffb547" strokeWidth={2} dot={false} name="予算上限" />
+          )}
         </LineChart>
       </ResponsiveContainer>
     </div>

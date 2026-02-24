@@ -45,6 +45,10 @@ export const summaryQuerySchema = z.object({
   year_month: yearMonthSchema.optional(),
 })
 
+export const trendQuerySchema = z.object({
+  range: z.enum(['1m', '3m', '1y']).default('3m'),
+})
+
 export const uploadReceiptResponseSchema = z.object({
   url: z.string().url(),
 })

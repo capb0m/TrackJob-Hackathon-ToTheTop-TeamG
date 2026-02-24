@@ -5,4 +5,5 @@ export const queryKeys = {
   goals: (status: 'all' | 'active' | 'paused' | 'completed') => ['goals', status] as const,
   assumptions: () => ['assumptions'] as const,
   transactionStreak: () => ['transactions', 'streak'] as const,
+  transactionTrend: (range: string) => ['transactions', 'trend', range] as const,
 }

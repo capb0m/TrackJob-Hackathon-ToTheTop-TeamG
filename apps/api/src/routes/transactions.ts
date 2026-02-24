@@ -9,12 +9,14 @@ import {
   listTransactionsQuerySchema,
   summaryQuerySchema,
   transactionIdParamSchema,
+  trendQuerySchema,
   updateTransactionBodySchema,
 } from '../schemas/transactions'
 import {
   createUserTransaction,
   getMonthlyTransactionSummary,
   getRecordingStreakDays,
+  getTransactionTrend,
   getUserTransaction,
   listUserTransactions,
   patchUserTransaction,
@@ -67,6 +69,13 @@ transactionsRoute.post('/upload-receipt', async (c) => {
 transactionsRoute.get('/streak', async (c) => {
   const userId = c.get('userId')
   const result = await getRecordingStreakDays(userId)
+  return success(c, result)
+})
+
+transactionsRoute.get('/trend', async (c) => {
+  const query = parseQuery(c, trendQuerySchema)
+  const userId = c.get('userId')
+  const result = await getTransactionTrend(userId, query.range)
   return success(c, result)
 })
 

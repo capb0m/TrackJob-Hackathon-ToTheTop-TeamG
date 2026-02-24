@@ -377,6 +377,8 @@ function resolveFallbackTurn(state: FallbackState, input: string) {
   }
 }
 
+const FINISH_PHRASE = 'これで記録を終了します'
+
 export function useChatWizard() {
   const [messages, setMessages] = useState<ChatMessage[]>(INITIAL_MESSAGES)
   const [input, setInput] = useState('')
@@ -387,6 +389,7 @@ export function useChatWizard() {
   const [isComplete, setIsComplete] = useState(false)
   const [mode, setMode] = useState<WizardMode>('ai')
   const [fallbackState, setFallbackState] = useState<FallbackState>(INITIAL_FALLBACK_STATE)
+  const [shouldAutoClose, setShouldAutoClose] = useState(false)
 
   const canSend = useMemo(() => input.trim().length > 0 && !loading && !isComplete, [input, loading, isComplete])
 
@@ -427,6 +430,10 @@ export function useChatWizard() {
           content: response.content,
         },
       ])
+
+      if (response.content.includes(FINISH_PHRASE)) {
+        setShouldAutoClose(true)
+      }
 
       if (response.is_complete && response.config) {
         setIsComplete(true)
@@ -561,6 +568,7 @@ export function useChatWizard() {
     setIsComplete(false)
     setMode('ai')
     setFallbackState(INITIAL_FALLBACK_STATE)
+    setShouldAutoClose(false)
   }, [])
 
   return {
@@ -573,6 +581,7 @@ export function useChatWizard() {
     config,
     isComplete,
     canSend,
+    shouldAutoClose,
     setInput,
     send,
     saveConfig,
