@@ -99,6 +99,31 @@ export async function patchUserBudget(
   }
 }
 
+export async function getBudgetAchievementStreak(userId: string): Promise<{ streak_months: number }> {
+  let streak = 0
+  const now = new Date()
+
+  // i=0 は当月（未完了）なのでスキップし、i=1（前月）から過去に遡る
+  for (let i = 1; i <= 24; i++) {
+    const date = new Date(now.getFullYear(), now.getMonth() - i, 1)
+    const yearMonth = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
+    const data = await getUserBudgets(userId, yearMonth)
+
+    if (data.total_budget === 0) {
+      if (streak > 0) break
+      continue
+    }
+
+    if (data.total_spent <= data.total_budget) {
+      streak++
+    } else {
+      break
+    }
+  }
+
+  return { streak_months: streak }
+}
+
 export async function copyUserBudgets(
   userId: string,
   body: { from_year_month: string; to_year_month: string },

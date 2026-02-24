@@ -197,6 +197,7 @@ export const transactionsApi = {
 export const budgetsApi = {
   get: (yearMonth?: string) =>
     apiRequest<BudgetSummary>(`/api/budgets${createQueryString({ year_month: yearMonth })}`),
+  streak: () => apiRequest<{ streak_months: number }>('/api/budgets/streak'),
   updateBulk: (body: {
     year_month: string
     budgets: Array<{

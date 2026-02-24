@@ -10,9 +10,15 @@ import {
   patchBudgetBodySchema,
   putBudgetsBodySchema,
 } from '../schemas/budgets'
-import { copyUserBudgets, getUserBudgets, patchUserBudget, putUserBudgets } from '../services/budgets'
+import { copyUserBudgets, getBudgetAchievementStreak, getUserBudgets, patchUserBudget, putUserBudgets } from '../services/budgets'
 
 const budgetsRoute = new Hono<AppBindings>()
+
+budgetsRoute.get('/streak', async (c) => {
+  const userId = c.get('userId')
+  const data = await getBudgetAchievementStreak(userId)
+  return success(c, data)
+})
 
 budgetsRoute.get('/', async (c) => {
   const query = parseQuery(c, getBudgetsQuerySchema)

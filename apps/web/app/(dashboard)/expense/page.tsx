@@ -127,11 +127,22 @@ export default function ExpensePage() {
             {summaryLoading ? <p className="text-sm text-text2">集計を読み込み中...</p> : null}
             {!summaryLoading && pieData.length > 0 ? <ExpensePieChart data={pieData} /> : null}
             {!summaryLoading && pieData.length === 0 ? <p className="text-sm text-text2">データがありません。</p> : null}
-            <div className="grid grid-cols-2 gap-2 text-xs text-text2">
-              {pieData.map((item) => (
-                <p key={item.name}>{item.name}</p>
-              ))}
-            </div>
+            {pieData.length > 0 ? (
+              <div className="mt-3 space-y-1.5">
+                {pieData.map((item) => {
+                  const total = pieData.reduce((sum, d) => sum + d.value, 0)
+                  const pct = total > 0 ? Math.round((item.value / total) * 100) : 0
+                  return (
+                    <div key={item.name} className="flex items-center gap-2 text-xs">
+                      <span className="h-2.5 w-2.5 flex-shrink-0 rounded-full" style={{ background: item.color }} />
+                      <span className="flex-1 text-text">{item.name}</span>
+                      <span className="text-text2">{formatCurrency(item.value)}</span>
+                      <span className="w-9 text-right font-medium text-text">{pct}%</span>
+                    </div>
+                  )
+                })}
+              </div>
+            ) : null}
             <p className="mt-3 text-xs text-text2">
               合計支出: {formatCurrency(summary?.total_expense ?? 0)} / 予算: {formatCurrency(budgetSummary?.total_budget ?? 0)}
             </p>

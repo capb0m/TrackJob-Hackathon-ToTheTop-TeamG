@@ -2,17 +2,35 @@
 
 import { useMemo, useState } from 'react'
 
+import type { TransactionCategory } from '@lifebalance/shared/types'
+
 import { TrendChart } from '@/components/charts/TrendChart'
 import { AddExpenseModal } from '@/components/modals/AddExpenseModal'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs } from '@/components/ui/tabs'
 import { useAdvice } from '@/hooks/useAdvice'
-import { useBudgets } from '@/hooks/useBudgets'
+import { useBudgetStreak, useBudgets } from '@/hooks/useBudgets'
 import { useGoals } from '@/hooks/useGoals'
 import { useRecordingStreak, useTransactionTrend, useTransactions, useTransactionSummary } from '@/hooks/useTransactions'
 import { formatCurrency, formatPercent, getCurrentYearMonth } from '@/lib/utils'
 import { useChatWizardStore } from '@/stores/chatWizardStore'
+
+const CATEGORY_LABELS: Record<TransactionCategory, string> = {
+  housing: '住居費',
+  food: '食費',
+  transport: '交通費',
+  entertainment: '娯楽',
+  clothing: '衣類',
+  communication: '通信',
+  medical: '医療',
+  social: '交際費',
+  other: 'その他',
+  salary: '給与',
+  bonus: '賞与',
+  side_income: '副収入',
+}
 
 const tabs = [
   { value: '1m', label: '1ヶ月' },
@@ -31,6 +49,7 @@ export default function DashboardPage() {
 
   const { data: currentSummary, isLoading: summaryLoading } = useTransactionSummary(currentYearMonth)
   const { streakDays } = useRecordingStreak()
+  const { streakMonths } = useBudgetStreak()
   const { budgetSummary } = useBudgets(currentYearMonth)
   const { goals } = useGoals('all')
   const { transactions: recentTransactions, isLoading: transactionsLoading } = useTransactions({
@@ -81,7 +100,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         <StatCard
           label="今月の支出"
           value={currentSummary?.total_expense ?? 0}
@@ -115,6 +134,15 @@ export default function DashboardPage() {
           progressLabel="目標 30日"
           tone="blue"
         />
+        <StatCard
+          label="連続目標達成"
+          value={streakMonths}
+          valueFormatter={(v) => `${v}ヶ月`}
+          subLabel={streakMonths >= 3 ? '予算内を継続中！' : '予算内に収めよう'}
+          progress={Math.min(streakMonths / 12, 1)}
+          progressLabel="目標 12ヶ月"
+          tone="green"
+        />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[1.8fr_1fr]">
@@ -146,7 +174,12 @@ export default function DashboardPage() {
               <div key={transaction.id} className="flex items-center justify-between border-b border-white/10 pb-2 text-sm last:border-none">
                 <div>
                   <p className="font-medium text-text">{transaction.description || '（メモなし）'}</p>
-                  <p className="text-xs text-text2">{transaction.transacted_at}</p>
+                  <div className="mt-0.5 flex items-center gap-2">
+                    <Badge variant={transaction.type === 'expense' ? 'warning' : 'success'}>
+                      {CATEGORY_LABELS[transaction.category]}
+                    </Badge>
+                    <p className="text-xs text-text2">{transaction.transacted_at}</p>
+                  </div>
                 </div>
                 <p className={transaction.type === 'expense' ? 'text-red-300' : 'text-green-300'}>
                   {transaction.type === 'expense' ? '-' : '+'}

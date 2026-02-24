@@ -8,6 +8,17 @@ import { queryKeys } from '@/lib/query-keys'
 import { getCurrentYearMonth } from '@/lib/utils'
 import { useToast } from '@/hooks/useToast'
 
+export function useBudgetStreak() {
+  const query = useQuery({
+    queryKey: queryKeys.budgetStreak(),
+    queryFn: () => budgetsApi.streak(),
+  })
+  return {
+    ...query,
+    streakMonths: query.data?.streak_months ?? 0,
+  }
+}
+
 export function useBudgets(yearMonth = getCurrentYearMonth()) {
   const query = useQuery({
     queryKey: queryKeys.budgets(yearMonth),
