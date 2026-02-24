@@ -319,6 +319,11 @@ export const connectionsApi = {
       method: 'POST',
       body: JSON.stringify({ line_user_id: lineUserId }),
     }),
+  connectDiscord: (code: string, redirectUri: string) =>
+    apiRequest<ExternalConnection>('/api/connections/discord', {
+      method: 'POST',
+      body: JSON.stringify({ code, redirect_uri: redirectUri }),
+    }),
   disconnect: (platform: 'line' | 'discord') =>
     apiRequest<void>(`/api/connections/${platform}`, {
       method: 'DELETE',

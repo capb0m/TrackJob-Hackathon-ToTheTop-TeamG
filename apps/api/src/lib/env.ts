@@ -11,6 +11,9 @@ const envSchema = z.object({
   GEMINI_API_KEY: z.string().optional().default(''),
   LINE_CHANNEL_SECRET: z.string().optional().default(''),
   LINE_CHANNEL_ACCESS_TOKEN: z.string().optional().default(''),
+  DISCORD_TOKEN: z.string().optional().default(''),
+  DISCORD_CLIENT_ID: z.string().optional().default(''),
+  DISCORD_CLIENT_SECRET: z.string().optional().default(''),
 })
 
 export const env = envSchema.parse(process.env)

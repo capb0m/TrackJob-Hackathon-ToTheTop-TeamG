@@ -26,6 +26,25 @@ export function upsertLineConnection(userId: string, lineUserId: string) {
     .returning()
 }
 
+export function upsertDiscordConnection(userId: string, discordUserId: string) {
+  return db
+    .insert(externalConnections)
+    .values({
+      userId,
+      platform: 'discord',
+      platformUserId: discordUserId,
+      isActive: true,
+    })
+    .onConflictDoUpdate({
+      target: [externalConnections.userId, externalConnections.platform],
+      set: {
+        platformUserId: discordUserId,
+        isActive: true,
+      },
+    })
+    .returning()
+}
+
 export function deleteConnection(userId: string, platform: 'line' | 'discord') {
   return db
     .delete(externalConnections)

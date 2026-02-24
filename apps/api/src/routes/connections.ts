@@ -3,8 +3,8 @@ import { Hono } from 'hono'
 import { parseJsonBody, parseParams } from '../lib/request'
 import { success } from '../lib/response'
 import type { AppBindings } from '../types'
-import { connectionPlatformParamSchema, lineConnectionBodySchema } from '../schemas/connections'
-import { connectLine, disconnectPlatform, listUserConnections } from '../services/connections'
+import { connectionPlatformParamSchema, discordConnectionBodySchema, lineConnectionBodySchema } from '../schemas/connections'
+import { connectDiscord, connectLine, disconnectPlatform, listUserConnections } from '../services/connections'
 
 const connectionsRoute = new Hono<AppBindings>()
 
@@ -20,6 +20,14 @@ connectionsRoute.post('/line', async (c) => {
   const userId = c.get('userId')
 
   const data = await connectLine(userId, body.line_user_id)
+  return success(c, data, 201)
+})
+
+connectionsRoute.post('/discord', async (c) => {
+  const body = await parseJsonBody(c, discordConnectionBodySchema)
+  const userId = c.get('userId')
+
+  const data = await connectDiscord(userId, body.code, body.redirect_uri)
   return success(c, data, 201)
 })
 

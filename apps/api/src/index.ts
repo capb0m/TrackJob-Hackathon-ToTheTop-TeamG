@@ -20,6 +20,7 @@ import adviceRoute from './routes/advice'
 import ocrRoute from './routes/ocr'
 import chatRoute from './routes/chat'
 import lineWebhookRoute from './routes/webhooks/line'
+import { startDiscordGateway } from './services/discord'
 
 const app = new Hono<AppBindings>()
 
@@ -71,6 +72,8 @@ app.onError((error, c) => {
   console.error(error)
   return errorResponse(c, 'INTERNAL_ERROR', 'Server error', 500)
 })
+
+startDiscordGateway().catch(console.error)
 
 export default {
   port: env.PORT,

@@ -7,6 +7,11 @@ export const lineConnectionBodySchema = z.object({
   line_user_id: z.string().regex(/^U[a-zA-Z0-9]{32}$/, 'line_user_id must start with U and be 33 chars'),
 })
 
+export const discordConnectionBodySchema = z.object({
+  code: z.string().min(1),
+  redirect_uri: z.string().url(),
+})
+
 export const connectionPlatformParamSchema = z.object({
   platform: z.enum(CONNECTION_PLATFORMS),
 })
