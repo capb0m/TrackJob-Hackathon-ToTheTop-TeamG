@@ -179,6 +179,7 @@ export const transactionsApi = {
         year_month: yearMonth,
       })}`,
     ),
+  streak: () => apiRequest<{ streak_days: number }>('/api/transactions/streak'),
   uploadReceipt: async (file: File) => {
     const formData = new FormData()
     formData.append('file', file)

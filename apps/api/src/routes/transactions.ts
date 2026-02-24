@@ -14,6 +14,7 @@ import {
 import {
   createUserTransaction,
   getMonthlyTransactionSummary,
+  getRecordingStreakDays,
   getUserTransaction,
   listUserTransactions,
   patchUserTransaction,
@@ -61,6 +62,12 @@ transactionsRoute.post('/upload-receipt', async (c) => {
   const result = await uploadReceiptImage(userId, file)
 
   return success(c, result, 201)
+})
+
+transactionsRoute.get('/streak', async (c) => {
+  const userId = c.get('userId')
+  const result = await getRecordingStreakDays(userId)
+  return success(c, result)
 })
 
 transactionsRoute.get('/:id', async (c) => {

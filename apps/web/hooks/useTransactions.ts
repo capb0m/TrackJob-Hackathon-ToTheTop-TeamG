@@ -44,6 +44,17 @@ export function useTransactionSummary(yearMonth = getCurrentYearMonth()) {
   })
 }
 
+export function useRecordingStreak() {
+  const query = useQuery({
+    queryKey: queryKeys.transactionStreak(),
+    queryFn: () => transactionsApi.streak(),
+  })
+  return {
+    ...query,
+    streakDays: query.data?.streak_days ?? 0,
+  }
+}
+
 export function useCreateTransaction() {
   const queryClient = useQueryClient()
   const { toast } = useToast()

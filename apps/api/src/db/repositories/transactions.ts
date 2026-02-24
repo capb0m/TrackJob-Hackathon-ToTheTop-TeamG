@@ -233,6 +233,48 @@ export async function getTotalSpent(userId: string, yearMonth: string) {
   return rows[0]?.total ?? 0
 }
 
+export async function getRecordingStreak(userId: string): Promise<number> {
+  const rows = await db
+    .selectDistinct({ day: transactions.transactedAt })
+    .from(transactions)
+    .where(eq(transactions.userId, userId))
+    .orderBy(desc(transactions.transactedAt))
+
+  if (rows.length === 0) return 0
+
+  const dateSet = new Set(rows.map((r) => r.day))
+
+  const todayUTC = new Date()
+  todayUTC.setUTCHours(0, 0, 0, 0)
+  const todayStr = todayUTC.toISOString().slice(0, 10)
+  const yesterdayStr = new Date(todayUTC.getTime() - 86400000).toISOString().slice(0, 10)
+
+  // 今日記録があればそこから、なければ昨日から遡る
+  let startStr: string
+  if (dateSet.has(todayStr)) {
+    startStr = todayStr
+  } else if (dateSet.has(yesterdayStr)) {
+    startStr = yesterdayStr
+  } else {
+    return 0
+  }
+
+  let streak = 0
+  let current = new Date(`${startStr}T00:00:00Z`)
+
+  while (true) {
+    const checkStr = current.toISOString().slice(0, 10)
+    if (dateSet.has(checkStr)) {
+      streak++
+      current = new Date(current.getTime() - 86400000)
+    } else {
+      break
+    }
+  }
+
+  return streak
+}
+
 export async function listRecentMonthlyExpenseTotals(userId: string, months: number) {
   const since = new Date()
   since.setUTCMonth(since.getUTCMonth() - (months - 1))

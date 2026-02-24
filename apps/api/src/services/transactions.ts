@@ -1,6 +1,7 @@
 import {
   createTransaction,
   deleteTransactionById,
+  getRecordingStreak,
   getSpentAmountsByCategory,
   getTransactionById,
   getTransactionSummary,
@@ -220,6 +221,11 @@ export async function uploadReceiptImage(userId: string, file: File) {
   return {
     url: data.publicUrl,
   }
+}
+
+export async function getRecordingStreakDays(userId: string) {
+  const streakDays = await getRecordingStreak(userId)
+  return { streak_days: streakDays }
 }
 
 export async function getBudgetSpentSummary(userId: string, yearMonth: string) {

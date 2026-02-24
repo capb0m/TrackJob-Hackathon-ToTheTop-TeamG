@@ -11,7 +11,7 @@ import { Tabs } from '@/components/ui/tabs'
 import { useAdvice } from '@/hooks/useAdvice'
 import { useBudgets } from '@/hooks/useBudgets'
 import { useGoals } from '@/hooks/useGoals'
-import { useTransactions, useTransactionSummary } from '@/hooks/useTransactions'
+import { useRecordingStreak, useTransactions, useTransactionSummary } from '@/hooks/useTransactions'
 import { transactionsApi } from '@/lib/api'
 import { queryKeys } from '@/lib/query-keys'
 import { formatCurrency, formatPercent, getCurrentYearMonth } from '@/lib/utils'
@@ -54,6 +54,7 @@ export default function DashboardPage() {
   const months = useMemo(() => buildYearMonthList(rangeToCount(range)), [range])
 
   const { data: currentSummary, isLoading: summaryLoading } = useTransactionSummary(currentYearMonth)
+  const { streakDays } = useRecordingStreak()
   const { budgetSummary } = useBudgets(currentYearMonth)
   const { goals } = useGoals('all')
   const { transactions: recentTransactions, isLoading: transactionsLoading } = useTransactions({
@@ -114,7 +115,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
           label="今月の支出"
           value={currentSummary?.total_expense ?? 0}
@@ -138,6 +139,15 @@ export default function DashboardPage() {
           progress={totalSavedAmount / Math.max(1, totalTargetAmount)}
           progressLabel={`目標総額 ${formatCurrency(totalTargetAmount)}`}
           tone="green"
+        />
+        <StatCard
+          label="連続記録日数"
+          value={streakDays}
+          valueFormatter={(v) => `${v}日`}
+          subLabel={streakDays >= 7 ? 'すごい！この調子で続けよう' : '毎日記録しよう'}
+          progress={Math.min(streakDays / 30, 1)}
+          progressLabel="目標 30日"
+          tone="blue"
         />
       </div>
 
@@ -232,6 +242,7 @@ export default function DashboardPage() {
 function StatCard({
   label,
   value,
+  valueFormatter = formatCurrency,
   subLabel,
   progress,
   progressLabel,
@@ -239,6 +250,7 @@ function StatCard({
 }: {
   label: string
   value: number
+  valueFormatter?: (value: number) => string
   subLabel: string
   progress: number
   progressLabel: string
@@ -250,7 +262,7 @@ function StatCard({
     <Card>
       <CardContent>
         <p className="text-xs text-text2">{label}</p>
-        <p className="mt-1 font-display text-3xl font-bold">{formatCurrency(value)}</p>
+        <p className="mt-1 font-display text-3xl font-bold">{valueFormatter(value)}</p>
         <p className="mt-1 text-xs text-text2">{subLabel}</p>
         <div className="mt-3">
           <div className="mb-1 flex justify-between text-[11px] text-text2">
