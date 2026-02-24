@@ -6,6 +6,7 @@ import { useState } from 'react'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { authProfileApi } from '@/lib/api'
 import { getSupabaseBrowserClient } from '@/lib/supabase'
 
 export default function LoginPage() {
@@ -28,11 +29,26 @@ export default function LoginPage() {
       })
 
       if (authError) {
-        setError(authError.message)
+        if (authError.message === 'Email not confirmed') {
+          setError('メールアドレスが未認証です。送信した確認メールのリンクをクリックしてください。')
+        } else {
+          setError(authError.message)
+        }
         return
       }
 
-      router.push('/dashboard')
+      // 初回ログイン判定: display_name が空なら初回設定へ
+      try {
+        const profile = await authProfileApi.get()
+        if (profile.display_name === '') {
+          router.push('/setup')
+        } else {
+          router.push('/dashboard')
+        }
+      } catch {
+        // プロフィール未作成（トリガー未設定など）の場合も初回設定へ
+        router.push('/setup')
+      }
     } catch (loginError) {
       setError(loginError instanceof Error ? loginError.message : 'ログインに失敗しました')
     } finally {

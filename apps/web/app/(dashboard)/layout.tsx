@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 
 import { MobileHeader } from '@/components/layout/MobileHeader'
 import { Sidebar } from '@/components/layout/Sidebar'
+import { ApiError, authProfileApi } from '@/lib/api'
 import { getSupabaseBrowserClient } from '@/lib/supabase'
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -16,12 +17,29 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     let mounted = true
     const supabase = getSupabaseBrowserClient()
 
-    supabase.auth.getSession().then(({ data }) => {
+    supabase.auth.getSession().then(async ({ data }) => {
       if (!mounted) return
 
       if (!data.session) {
         router.replace('/login')
         return
+      }
+
+      // 初回設定未完了（display_name が空）なら /setup へ
+      try {
+        const profile = await authProfileApi.get()
+        if (!mounted) return
+        if (profile.display_name === '') {
+          router.replace('/setup')
+          return
+        }
+      } catch (error) {
+        if (!mounted) return
+        if (error instanceof ApiError && error.status === 404) {
+          router.replace('/setup')
+          return
+        }
+        // ネットワークエラー等はダッシュボードをそのまま表示
       }
 
       setCheckingSession(false)
