@@ -3,7 +3,7 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { ChatMessage, ChatWizardConfig } from '@lifebalance/shared/types'
 
-import { authProfileApi, budgetsApi, chatApi, goalsApi } from '@/lib/api'
+import { ApiError, authProfileApi, budgetsApi, chatApi, goalsApi } from '@/lib/api'
 
 const EXPENSE_CATEGORIES = [
   'housing',
@@ -478,8 +478,27 @@ export function useChatWizard() {
       }
       try {
         await authProfileApi.update(profilePayload)
-      } catch (saveError) {
-        warnSkippedSave('profile', profilePayload, saveError)
+      } catch (updateError) {
+        // プロフィールが存在しない場合（メール確認後の初回ログインなど）は新規作成にフォールバック
+        if (updateError instanceof ApiError && updateError.status === 404) {
+          let displayName = 'ユーザー'
+          try {
+            const raw = localStorage.getItem('lifebalance:pending-profile')
+            if (raw) {
+              const pending = JSON.parse(raw) as { display_name?: string }
+              if (pending.display_name) displayName = pending.display_name
+              localStorage.removeItem('lifebalance:pending-profile')
+            }
+          } catch {}
+          const createPayload = { display_name: displayName, monthly_income: config.monthly_income }
+          try {
+            await authProfileApi.create(createPayload)
+          } catch (createError) {
+            warnSkippedSave('profile', createPayload, createError)
+          }
+        } else {
+          warnSkippedSave('profile', profilePayload, updateError)
+        }
       }
 
       for (const goal of config.life_goals) {

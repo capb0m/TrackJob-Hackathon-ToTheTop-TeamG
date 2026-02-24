@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(tail:*)",
+      "Bash(cd \"/c/Users/zugat/OneDrive/デスクトップ/プログラミング/to_the_future/TrackJob-Hackathon-ToTheTop-TeamG\" && pnpm install 2>&1)",
+      "Bash(which pnpm:*)",
+      "Bash(which node:*)",
+      "Bash(echo Exit: $?:*)",
+      "Bash(cd \"/c/Users/zugat/OneDrive/デスクトップ/プログラミング/to_the_future/TrackJob-Hackathon-ToTheTop-TeamG\" && pnpm exec next --version 2>&1)",
+      "Bash(head:*)",
+      "Bash(grep:*)",
+      "Bash(pnpm --version && pnpm store path 2>&1)",
+      "Bash(tasklist 2>/dev/null | grep -i node | head -10 || ps aux | grep -i \"node\\\\|pnpm\" | grep -v grep | head -10)",
+      "Bash(pkill:*)",
+      "Bash(cat:*)",
+      "Bash(taskkill:*)",
+      "Bash(echo Copying node_modules to web directory...:*)",
+      "Bash(echo Copy exit: $EXIT:*)",
+      "Bash(grep :3000:*)",
+      "Bash(tasklist:*)",
+      "Bash(curl:*)",
+      "Bash(netstat:*)",
+      "Bash(cmd:*)",
+      "Bash(docker:*)",
+      "Bash(python3:*)",
+      "Bash(ls:*)"
+    ]
+  }
+}

@@ -38,11 +38,20 @@ export default function RegisterPage() {
         return
       }
 
+      // メール確認が必要な場合、signUp直後はセッションがなくAPI呼び出しが失敗する。
+      // ウィザード保存時に使えるよう、プロフィール情報をlocalStorageに退避しておく。
+      localStorage.setItem(
+        'lifebalance:pending-profile',
+        JSON.stringify({ display_name: displayName, monthly_income: Number(monthlyIncome) }),
+      )
+
       try {
         await authProfileApi.create({
           display_name: displayName,
           monthly_income: Number(monthlyIncome),
         })
+        // 作成成功したので退避データは不要
+        localStorage.removeItem('lifebalance:pending-profile')
       } catch (apiError) {
         // Phase 1: B担当API未完成時はプロフィール初期化をスキップして先行する
         console.warn('POST /api/auth/profile skipped:', apiError)
