@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { EXPENSE_CATEGORIES, type ExpenseCategory } from '@lifebalance/shared/types'
 import { useForm } from 'react-hook-form'
@@ -33,10 +33,19 @@ function isExpenseCategory(value: string): value is ExpenseCategory {
   return EXPENSE_CATEGORIES.includes(value as ExpenseCategory)
 }
 
+function formatAmountInput(value: string) {
+  const digitsOnly = value.replace(/\D/g, '')
+  if (!digitsOnly) {
+    return ''
+  }
+  return Number(digitsOnly).toLocaleString('ja-JP')
+}
+
 export function AddExpenseModal({ open, onOpenChange }: AddExpenseModalProps) {
   const [ocrState, setOcrState] = useState<string>('')
   const [ocrLoading, setOcrLoading] = useState(false)
   const [receiptUrl, setReceiptUrl] = useState<string | null>(null)
+  const [amountInput, setAmountInput] = useState('')
   const createTransaction = useCreateTransaction()
   const { toast } = useToast()
 
@@ -82,6 +91,7 @@ export function AddExpenseModal({ open, onOpenChange }: AddExpenseModalProps) {
     toast({ title: '支出を追加しました。', variant: 'success' })
     setReceiptUrl(null)
     setOcrState('')
+    setAmountInput('')
     reset({
       amount: undefined,
       category: 'food',
@@ -92,6 +102,19 @@ export function AddExpenseModal({ open, onOpenChange }: AddExpenseModalProps) {
   }
 
   const selectedCategory = watch('category')
+
+  useEffect(() => {
+    if (open) return
+    setReceiptUrl(null)
+    setOcrState('')
+    setAmountInput('')
+    reset({
+      amount: undefined,
+      category: 'food',
+      description: '',
+      transactedAt: new Date().toISOString().slice(0, 10),
+    })
+  }, [open, reset])
 
   async function runOcr(file: File) {
     setOcrLoading(true)
@@ -106,6 +129,7 @@ export function AddExpenseModal({ open, onOpenChange }: AddExpenseModalProps) {
 
       if (parsed.amount !== null) {
         setValue('amount', parsed.amount, { shouldValidate: true })
+        setAmountInput(parsed.amount.toLocaleString('ja-JP'))
       }
       if (parsed.category && isExpenseCategory(parsed.category)) {
         setValue('category', parsed.category, { shouldValidate: true })
@@ -136,61 +160,13 @@ export function AddExpenseModal({ open, onOpenChange }: AddExpenseModalProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="bg-white">
         <DialogHeader>
           <DialogTitle>支出を追加</DialogTitle>
         </DialogHeader>
         <DialogBody>
           <form id="add-expense-form" className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
-            <div className="space-y-1">
-              <label className="text-xs text-text2" htmlFor="amount">
-                金額
-              </label>
-              <Input id="amount" type="number" {...register('amount', { valueAsNumber: true })} />
-              {errors.amount ? <p className="text-xs text-red-300">{errors.amount.message}</p> : null}
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-xs text-text2">カテゴリ</label>
-              <input type="hidden" {...register('category')} />
-              <div className="grid grid-cols-4 gap-2">
-                {categories.map((category) => (
-                  <button
-                    key={category.value}
-                    type="button"
-                    className={`rounded-lg border px-2 py-2 text-xs transition-colors ${
-                      selectedCategory === category.value
-                        ? 'border-accent bg-accent/10 text-accent'
-                        : 'border-white/10 bg-bg text-text2 hover:border-accent/40 hover:text-text'
-                    }`}
-                    onClick={() => setValue('category', category.value, { shouldValidate: true })}
-                    aria-label={category.label}
-                  >
-                    <span className="block text-base">{category.icon}</span>
-                    {category.label}
-                  </button>
-                ))}
-              </div>
-              {errors.category ? <p className="text-xs text-red-300">{errors.category.message}</p> : null}
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-xs text-text2" htmlFor="description">
-                メモ
-              </label>
-              <Input id="description" {...register('description')} />
-              {errors.description ? <p className="text-xs text-red-300">{errors.description.message}</p> : null}
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-xs text-text2" htmlFor="transactedAt">
-                日付
-              </label>
-              <Input id="transactedAt" type="date" {...register('transactedAt')} />
-              {errors.transactedAt ? <p className="text-xs text-red-300">{errors.transactedAt.message}</p> : null}
-            </div>
-
-            <div className="space-y-2 rounded-lg border border-dashed border-white/20 bg-bg p-3">
+            <div className="space-y-2 rounded-xl border border-dashed border-border bg-card2 p-3">
               <label className="text-xs text-text2" htmlFor="receipt-upload">
                 レシート画像（OCR）
               </label>
@@ -205,7 +181,75 @@ export function AddExpenseModal({ open, onOpenChange }: AddExpenseModalProps) {
                 }}
                 disabled={ocrLoading}
               />
-              {ocrState ? <p className="text-xs text-accent2">{ocrState}</p> : null}
+              {ocrState ? <p className="text-xs text-accent">{ocrState}</p> : null}
+            </div>
+
+            <div className="relative py-1">
+              <div className="h-px bg-border" />
+              <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white px-2 text-xs text-text2">
+                もしくは
+              </span>
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-xs text-text2" htmlFor="amount">
+                金額
+              </label>
+              <input type="hidden" {...register('amount', { valueAsNumber: true })} />
+              <Input
+                id="amount"
+                type="text"
+                inputMode="numeric"
+                placeholder="例: 1200"
+                value={amountInput}
+                onChange={(event) => {
+                  const formatted = formatAmountInput(event.target.value)
+                  setAmountInput(formatted)
+                  const rawNumber = formatted.replace(/,/g, '')
+                  setValue('amount', rawNumber ? Number(rawNumber) : 0, { shouldValidate: true })
+                }}
+              />
+              {errors.amount ? <p className="text-xs text-danger">{errors.amount.message}</p> : null}
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-xs text-text2">カテゴリ</label>
+              <input type="hidden" {...register('category')} />
+              <div className="grid grid-cols-4 gap-2">
+                {categories.map((category) => (
+                  <button
+                    key={category.value}
+                    type="button"
+                    className={`rounded-lg border px-2 py-2 text-xs transition-colors ${
+                      selectedCategory === category.value
+                        ? 'border-accent bg-accent/10 text-accent'
+                        : 'border-border bg-card2 text-text2 hover:border-accent/40 hover:text-text'
+                    }`}
+                    onClick={() => setValue('category', category.value, { shouldValidate: true })}
+                    aria-label={category.label}
+                  >
+                    <span className="block text-base">{category.icon}</span>
+                    {category.label}
+                  </button>
+                ))}
+              </div>
+              {errors.category ? <p className="text-xs text-danger">{errors.category.message}</p> : null}
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-xs text-text2" htmlFor="description">
+                タイトル（任意）
+              </label>
+              <Input id="description" {...register('description')} />
+              {errors.description ? <p className="text-xs text-danger">{errors.description.message}</p> : null}
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-xs text-text2" htmlFor="transactedAt">
+                日付
+              </label>
+              <Input id="transactedAt" type="date" {...register('transactedAt')} />
+              {errors.transactedAt ? <p className="text-xs text-danger">{errors.transactedAt.message}</p> : null}
             </div>
           </form>
         </DialogBody>

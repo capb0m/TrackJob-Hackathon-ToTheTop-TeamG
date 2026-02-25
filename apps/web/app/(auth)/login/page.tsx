@@ -58,7 +58,7 @@ export default function LoginPage() {
 
   return (
     <main className="flex min-h-screen items-center justify-center px-4">
-      <div className="w-full max-w-md rounded-2xl border border-white/10 bg-card p-6">
+      <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-[0_10px_28px_rgba(35,55,95,0.06)]">
         <h1 className="font-display text-2xl font-bold">ログイン</h1>
         <p className="mt-1 text-sm text-text2">LifeBalance を利用するにはログインしてください。</p>
 
@@ -89,7 +89,7 @@ export default function LoginPage() {
               required
             />
           </div>
-          {error ? <p className="text-sm text-red-300">{error}</p> : null}
+          {error ? <p className="text-sm text-danger">{error}</p> : null}
           <Button type="submit" className="w-full" disabled={loading}>
             {loading ? 'ログイン中...' : 'ログイン'}
           </Button>

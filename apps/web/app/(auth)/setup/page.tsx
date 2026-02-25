@@ -125,7 +125,7 @@ export default function SetupPage() {
   if (step === 'name') {
     return (
       <main className="flex min-h-screen items-center justify-center px-4">
-        <div className="w-full max-w-md rounded-2xl border border-white/10 bg-card p-6">
+        <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-[0_10px_28px_rgba(35,55,95,0.06)]">
           <h1 className="font-display text-2xl font-bold">はじめまして</h1>
           <p className="mt-1 text-sm text-text2">アプリ内で使う表示名を入力してください。</p>
 
@@ -144,7 +144,7 @@ export default function SetupPage() {
                 maxLength={50}
               />
             </div>
-            {nameError ? <p className="text-sm text-red-300">{nameError}</p> : null}
+            {nameError ? <p className="text-sm text-danger">{nameError}</p> : null}
             <Button type="submit" className="w-full" disabled={savingName}>
               {savingName ? '保存中...' : '次へ（初期設定へ）'}
             </Button>
@@ -162,15 +162,15 @@ export default function SetupPage() {
           <p className="mt-1 text-sm text-text2">AIとの会話で月収・目標・予算を設定します。</p>
         </div>
 
-        <div className="rounded-2xl border border-white/10 bg-card p-6">
+        <div className="rounded-2xl border border-border bg-card p-6 shadow-[0_10px_28px_rgba(35,55,95,0.06)]">
           {wizard.mode === 'fallback' ? (
-            <p className="mb-3 rounded-md border border-warn/40 bg-warn/10 px-3 py-2 text-xs text-warn">
+            <p className="mb-3 rounded-md border border-warn/40 bg-warn/25 px-3 py-2 text-xs text-[#9f6f16]">
               AI応答の代わりにルールベースで進行中です。
             </p>
           ) : null}
 
           <div
-            className="max-h-[400px] space-y-4 overflow-y-auto rounded-lg border border-white/10 bg-bg p-3"
+            className="max-h-[400px] space-y-4 overflow-y-auto rounded-xl border border-border bg-card2 p-3"
             aria-live="polite"
           >
             {wizard.messages.map((message, index) =>
@@ -183,7 +183,7 @@ export default function SetupPage() {
                 </div>
               ) : (
                 <div key={`${message.role}-${index}`} className="flex justify-end">
-                  <div className="max-w-[85%] rounded-lg rounded-tr-none border border-white/10 bg-card px-3 py-2 text-sm text-text">
+                  <div className="max-w-[85%] rounded-lg rounded-tr-none border border-border bg-card px-3 py-2 text-sm text-text">
                     {message.content}
                   </div>
                 </div>
@@ -204,10 +204,10 @@ export default function SetupPage() {
             <div ref={bottomRef} />
           </div>
 
-          {wizard.error ? <p className="mt-3 text-xs text-red-300">{wizard.error}</p> : null}
+          {wizard.error ? <p className="mt-3 text-xs text-danger">{wizard.error}</p> : null}
 
           {wizard.isComplete && wizard.config ? (
-            <div className="mt-4 space-y-2 rounded-lg border border-accent2/30 bg-accent2/10 p-3">
+            <div className="mt-4 space-y-2 rounded-xl border border-accent/30 bg-accent/10 p-3">
               <p className="text-sm font-semibold">設定プレビュー</p>
               <pre className="overflow-x-auto text-xs text-text2">{JSON.stringify(wizard.config, null, 2)}</pre>
             </div>

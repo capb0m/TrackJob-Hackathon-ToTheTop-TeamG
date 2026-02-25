@@ -10,12 +10,12 @@ export function GaugeChart({ value, label }: GaugeChartProps) {
   const x = 100 + Math.cos(rad) * 70
   const y = 100 + Math.sin(rad) * 70
 
-  const color = clamped >= 0.8 ? '#2edd8e' : clamped >= 0.5 ? '#ffb547' : '#ff5f6d'
+  const color = clamped >= 0.8 ? '#24b47e' : clamped >= 0.5 ? '#e9a33f' : '#e96b7f'
 
   return (
     <div className="flex flex-col items-center gap-1">
       <svg viewBox="0 0 200 120" className="h-32 w-full max-w-[220px]">
-        <path d="M 30 100 A 70 70 0 0 1 170 100" fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="14" strokeLinecap="round" />
+        <path d="M 30 100 A 70 70 0 0 1 170 100" fill="none" stroke="rgba(47,74,122,0.14)" strokeWidth="14" strokeLinecap="round" />
         <path
           d="M 30 100 A 70 70 0 0 1 170 100"
           fill="none"

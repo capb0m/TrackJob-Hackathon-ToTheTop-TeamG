@@ -30,7 +30,7 @@ const CATEGORY_LABELS: Record<TransactionCategory, string> = {
   side_income: '副収入',
 }
 
-const PIE_COLORS = ['#ff7eb3', '#ffb547', '#6c8fff', '#4af0b0', '#a78bfa', '#2edd8e', '#f97316', '#22d3ee', '#f43f5e']
+const PIE_COLORS = ['#2fbf8f', '#66d9b8', '#9bead3', '#5aa4ff', '#8ac4ff', '#ffd27a', '#ffbb4a', '#e96b7f', '#f5a4b4']
 
 function getRecentMonths(count: number) {
   const months: string[] = []
@@ -98,15 +98,15 @@ export default function ExpensePage() {
           <CardContent className="space-y-2">
             {budgetsLoading ? <p className="text-sm text-text2">予算データを読み込み中...</p> : null}
             {budgets.map((budget) => (
-              <div key={budget.id} className="grid grid-cols-[1fr_2fr_auto_auto] items-center gap-3 border-b border-white/10 py-2 text-sm last:border-none">
+              <div key={budget.id} className="grid grid-cols-[1fr_2fr_auto_auto] items-center gap-3 border-b border-border py-2 text-sm last:border-none">
                 <p>{CATEGORY_LABELS[budget.category]}</p>
-                <div className="h-2 rounded-full bg-black/30">
+                <div className="h-2 rounded-full bg-[rgba(47,74,122,0.12)]">
                   <div
                     className="h-full rounded-full"
                     style={{
                       width: `${Math.min(budget.usage_rate, 1) * 100}%`,
                       background:
-                        budget.usage_rate >= 1 ? '#ff5f6d' : budget.usage_rate >= 0.8 ? '#ffb547' : '#4af0b0',
+                        budget.usage_rate >= 1 ? 'var(--danger)' : budget.usage_rate >= 0.8 ? '#e9a33f' : 'var(--accent)',
                     }}
                   />
                 </div>
@@ -188,20 +188,20 @@ export default function ExpensePage() {
             {pagination ? ` / ${pagination.total}件` : ''}
           </p>
           {transactionsLoading ? <p className="text-sm text-text2">取引履歴を読み込み中...</p> : null}
-          {transactionsError ? <p className="text-sm text-red-300">取引履歴の取得に失敗しました。</p> : null}
+          {transactionsError ? <p className="text-sm text-danger">取引履歴の取得に失敗しました。</p> : null}
 
           {!transactionsLoading && transactions.length === 0 ? (
             <p className="text-sm text-text2">条件に一致する取引がありません。</p>
           ) : null}
 
           {transactions.map((transaction) => (
-            <div key={transaction.id} className="grid grid-cols-[1fr_auto_auto] items-center gap-3 border-b border-white/10 py-2 last:border-none">
+            <div key={transaction.id} className="grid grid-cols-[1fr_auto_auto] items-center gap-3 border-b border-border py-2 last:border-none">
               <div>
                 <p className="text-sm font-medium">{transaction.description || '（メモなし）'}</p>
                 <p className="text-xs text-text2">{transaction.transacted_at}</p>
               </div>
               <Badge variant={transaction.type === 'expense' ? 'warning' : 'success'}>{CATEGORY_LABELS[transaction.category]}</Badge>
-              <p className={transaction.type === 'expense' ? 'text-sm text-red-300' : 'text-sm text-green-300'}>
+              <p className={transaction.type === 'expense' ? 'text-sm text-danger' : 'text-sm text-success'}>
                 {transaction.type === 'expense' ? '-' : '+'}
                 {formatCurrency(transaction.amount)}
               </p>

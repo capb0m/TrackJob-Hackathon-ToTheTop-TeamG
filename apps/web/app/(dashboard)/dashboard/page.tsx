@@ -1,36 +1,19 @@
 'use client'
 
-import { useMemo, useState } from 'react'
-
-import type { TransactionCategory } from '@lifebalance/shared/types'
+import Link from 'next/link'
+import { useEffect, useMemo, useState } from 'react'
 
 import { TrendChart } from '@/components/charts/TrendChart'
 import { AddExpenseModal } from '@/components/modals/AddExpenseModal'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs } from '@/components/ui/tabs'
 import { useAdvice } from '@/hooks/useAdvice'
-import { useBudgetStreak, useBudgets } from '@/hooks/useBudgets'
+import { useBudgets } from '@/hooks/useBudgets'
 import { useGoals } from '@/hooks/useGoals'
-import { useRecordingStreak, useTransactionTrend, useTransactions, useTransactionSummary } from '@/hooks/useTransactions'
-import { formatCurrency, formatPercent, getCurrentYearMonth } from '@/lib/utils'
-import { useChatWizardStore } from '@/stores/chatWizardStore'
-
-const CATEGORY_LABELS: Record<TransactionCategory, string> = {
-  housing: '住居費',
-  food: '食費',
-  transport: '交通費',
-  entertainment: '娯楽',
-  clothing: '衣類',
-  communication: '通信',
-  medical: '医療',
-  social: '交際費',
-  other: 'その他',
-  salary: '給与',
-  bonus: '賞与',
-  side_income: '副収入',
-}
+import { useTransactionTrend, useTransactions, useTransactionSummary } from '@/hooks/useTransactions'
+import { authProfileApi } from '@/lib/api'
+import { formatCurrency, getCurrentYearMonth } from '@/lib/utils'
 
 const tabs = [
   { value: '1m', label: '1ヶ月' },
@@ -43,13 +26,11 @@ type RangeKey = '1m' | '3m' | '1y'
 export default function DashboardPage() {
   const [range, setRange] = useState<RangeKey>('1m')
   const [expenseModalOpen, setExpenseModalOpen] = useState(false)
-  const openChat = useChatWizardStore((state) => state.open)
+  const [displayName, setDisplayName] = useState('ユーザー')
 
   const currentYearMonth = getCurrentYearMonth()
 
-  const { data: currentSummary, isLoading: summaryLoading } = useTransactionSummary(currentYearMonth)
-  const { streakDays } = useRecordingStreak()
-  const { streakMonths } = useBudgetStreak()
+  const { data: currentSummary } = useTransactionSummary(currentYearMonth)
   const { budgetSummary } = useBudgets(currentYearMonth)
   const { goals } = useGoals('all')
   const { transactions: recentTransactions, isLoading: transactionsLoading } = useTransactions({
@@ -60,8 +41,50 @@ export default function DashboardPage() {
     sort: 'transacted_at',
   })
   const { advice, loading: adviceLoading } = useAdvice()
-
   const { data: rawTrendData } = useTransactionTrend(range)
+
+  useEffect(() => {
+    let mounted = true
+    authProfileApi
+      .get()
+      .then((profile) => {
+        if (!mounted) return
+        const name = profile.display_name.trim()
+        if (name) {
+          setDisplayName(name)
+        }
+      })
+      .catch(() => {})
+
+    return () => {
+      mounted = false
+    }
+  }, [])
+
+  const totalBudget = budgetSummary?.total_budget ?? 0
+  const totalExpense = currentSummary?.total_expense ?? 0
+  const expenseRate = totalExpense / Math.max(1, totalBudget)
+  const overAmount = Math.max(totalExpense - totalBudget, 0)
+  const ringPercent = Math.min(Math.max(expenseRate, 0), 1) * 100
+  const budgetUsageTone =
+    expenseRate > 1
+      ? 'var(--danger)'
+      : expenseRate > 0.8
+        ? '#e9a33f'
+        : 'var(--accent)'
+
+  const guidanceMessage = useMemo(() => {
+    if (expenseRate > 1) {
+      return `予算を${overAmount.toLocaleString('ja-JP')}円超過しています。支出ペースの見直しが必要です。`
+    }
+    if (expenseRate > 0.8) {
+      return 'おっと、残り予算がかなり少なくなっています。'
+    }
+    if (expenseRate > 0.5) {
+      return '残り予算は半分以下です。ここからが大事です。'
+    }
+    return 'いい調子です。支出をコントロールできていますね。'
+  }, [expenseRate, overAmount])
 
   const trendData = useMemo(
     () =>
@@ -72,80 +95,91 @@ export default function DashboardPage() {
     [rawTrendData, budgetSummary?.total_budget],
   )
 
-  const savingTarget = useMemo(
-    () => goals.reduce((sum, goal) => sum + Math.max(0, goal.monthly_saving), 0),
-    [goals],
-  )
-  const totalSavedAmount = useMemo(
-    () => goals.reduce((sum, goal) => sum + Math.max(0, goal.saved_amount), 0),
-    [goals],
-  )
-  const totalTargetAmount = useMemo(
-    () => goals.reduce((sum, goal) => sum + Math.max(0, goal.target_amount), 0),
-    [goals],
-  )
+  const previewAdviceItems = useMemo(() => {
+    if (!advice) return []
+    const base = advice.content.urgent.length > 0 ? advice.content.urgent : advice.content.suggestions
+    return base.slice(0, 2)
+  }, [advice])
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       <div className="flex flex-col items-start justify-between gap-3 md:flex-row md:items-center">
         <div>
-          <h1 className="font-display text-2xl font-bold">おはようございます 👋</h1>
-          <p className="text-sm text-text2">{currentYearMonth} — 今月の残り予算を確認しましょう</p>
+          <h1 className="font-display text-[30px] font-bold leading-tight tracking-[-0.02em] text-[#1c3b30]">
+            おかえりなさい、{displayName}さん。
+          </h1>
+          <p className="text-sm text-text2">{guidanceMessage}</p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="ghost" onClick={() => openChat('setup')}>
-            🤖 チャット設定
-          </Button>
-          <Button onClick={() => setExpenseModalOpen(true)}>＋ 支出を追加</Button>
-        </div>
+        <Button className="bg-accent text-white hover:bg-success" onClick={() => setExpenseModalOpen(true)}>
+          ＋ 支出を追加
+        </Button>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-        <StatCard
-          label="今月の支出"
-          value={currentSummary?.total_expense ?? 0}
-          subLabel={summaryLoading ? '読み込み中...' : `収入 ${formatCurrency(currentSummary?.total_income ?? 0)}`}
-          progress={(currentSummary?.total_expense ?? 0) / Math.max(1, budgetSummary?.total_budget ?? 0)}
-          progressLabel={`予算 ${formatCurrency(budgetSummary?.total_budget ?? 0)}`}
-          tone="warn"
-        />
-        <StatCard
-          label="今月の貯蓄"
-          value={currentSummary?.net_saving ?? 0}
-          subLabel={savingTarget > 0 ? `目標達成率 ${formatPercent((currentSummary?.net_saving ?? 0) / savingTarget)}` : '目標未設定'}
-          progress={(currentSummary?.net_saving ?? 0) / Math.max(1, savingTarget)}
-          progressLabel={`目標 ${formatCurrency(savingTarget)}`}
-          tone="blue"
-        />
-        <StatCard
-          label="総資産（目標進捗）"
-          value={totalSavedAmount}
-          subLabel={`${goals.length}件の目標を管理中`}
-          progress={totalSavedAmount / Math.max(1, totalTargetAmount)}
-          progressLabel={`目標総額 ${formatCurrency(totalTargetAmount)}`}
-          tone="green"
-        />
-        <StatCard
-          label="連続記録日数"
-          value={streakDays}
-          valueFormatter={(v) => `${v}日`}
-          subLabel={streakDays >= 7 ? 'すごい！この調子で続けよう' : '毎日記録しよう'}
-          progress={Math.min(streakDays / 30, 1)}
-          progressLabel="目標 30日"
-          tone="blue"
-        />
-        <StatCard
-          label="連続目標達成"
-          value={streakMonths}
-          valueFormatter={(v) => `${v}ヶ月`}
-          subLabel={streakMonths >= 3 ? '予算内を継続中！' : '予算内に収めよう'}
-          progress={Math.min(streakMonths / 12, 1)}
-          progressLabel="目標 12ヶ月"
-          tone="green"
-        />
+      <div className="grid gap-4 xl:grid-cols-[1fr_1.7fr]">
+        <Link href="/expense" className="block">
+          <Card className="min-h-[232px] cursor-pointer transition-transform hover:-translate-y-[1px]">
+            <CardContent className="h-full">
+              <div className="flex h-full flex-col justify-between gap-5 sm:flex-row sm:items-center">
+                <div className="flex-1 space-y-4">
+                  <div className="space-y-1">
+                    <p className="text-lg font-semibold text-accent">今月の支出</p>
+                    <p className="font-display text-[34px] font-bold tracking-[-0.02em] text-text">{formatCurrency(totalExpense)}</p>
+                  </div>
+                  <div className="h-px bg-border" />
+                  <div className="space-y-1">
+                    <p className="text-lg font-semibold text-accent">今月の予算</p>
+                    <p className="font-display text-[34px] font-bold tracking-[-0.02em] text-text">{formatCurrency(totalBudget)}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-center">
+                  <div className="relative h-[140px] w-[140px]">
+                    <div
+                      className="h-full w-full rounded-full"
+                      style={{
+                        background: `conic-gradient(${budgetUsageTone} ${ringPercent}%, rgba(47,191,143,0.14) 0)`,
+                        WebkitMask: 'radial-gradient(farthest-side, transparent calc(100% - 20px), #000 calc(100% - 20px))',
+                        mask: 'radial-gradient(farthest-side, transparent calc(100% - 20px), #000 calc(100% - 20px))',
+                      }}
+                    />
+                    <div className="pointer-events-none absolute inset-0 grid place-items-center">
+                      <p className="font-display text-[38px] font-bold text-text">{Math.round(expenseRate * 100)}%</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </Link>
+
+        <Card className="min-h-[232px]">
+          <CardHeader>
+            <CardTitle>KakeAIからの提案</CardTitle>
+            <Link
+              href="/advice"
+              className="inline-flex h-9 items-center justify-center rounded-xl border border-accent/40 bg-accent/10 px-3 text-xs font-semibold text-accent transition-colors hover:bg-accent/20"
+            >
+              詳しく確認する
+            </Link>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {adviceLoading ? <p className="text-sm text-text2">アドバイスを読み込み中...</p> : null}
+            {!adviceLoading && previewAdviceItems.length === 0 ? (
+              <p className="text-sm leading-relaxed text-text2">
+                アドバイスはまだありません。支出・収入の記録が増えると、傾向に合わせて提案します。
+              </p>
+            ) : null}
+            {previewAdviceItems.map((item) => (
+              <Link key={item.title} href="/advice" className="block rounded-xl bg-card2 p-3 transition-colors hover:bg-accent/10">
+                <h3 className="text-sm font-semibold text-text">{item.title}</h3>
+                <p className="mt-1 text-xs leading-relaxed text-text2">{item.body}</p>
+              </Link>
+            ))}
+          </CardContent>
+        </Card>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-[1.8fr_1fr]">
+      <div className="grid gap-4 xl:grid-cols-[1.35fr_1fr]">
         <Card>
           <CardHeader>
             <CardTitle>支出トレンド</CardTitle>
@@ -157,31 +191,34 @@ export default function DashboardPage() {
             />
           </CardHeader>
           <CardContent id={`tab-panel-${range}`} role="tabpanel">
-            <TrendChart data={trendData} />
+            {trendData.length > 0 ? (
+              <TrendChart data={trendData} />
+            ) : (
+              <div className="grid min-h-[230px] place-items-center rounded-xl border border-dashed border-border bg-[#fbfffd] text-sm text-text2">
+                記録はまだありません。
+              </div>
+            )}
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle>最近の取引</CardTitle>
+            <CardTitle>最近の収支記録</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="space-y-2">
             {transactionsLoading ? <p className="text-sm text-text2">取引履歴を読み込み中...</p> : null}
             {!transactionsLoading && recentTransactions.length === 0 ? (
-              <p className="text-sm text-text2">最近の取引はありません。</p>
+              <div className="grid min-h-[190px] place-items-center rounded-xl border border-dashed border-border bg-[#fbfffd] text-sm text-text2">
+                記録はまだありません。
+              </div>
             ) : null}
             {recentTransactions.map((transaction) => (
-              <div key={transaction.id} className="flex items-center justify-between border-b border-white/10 pb-2 text-sm last:border-none">
+              <div key={transaction.id} className="flex items-center justify-between border-b border-border py-2 text-sm last:border-none">
                 <div>
                   <p className="font-medium text-text">{transaction.description || '（メモなし）'}</p>
-                  <div className="mt-0.5 flex items-center gap-2">
-                    <Badge variant={transaction.type === 'expense' ? 'warning' : 'success'}>
-                      {CATEGORY_LABELS[transaction.category]}
-                    </Badge>
-                    <p className="text-xs text-text2">{transaction.transacted_at}</p>
-                  </div>
+                  <p className="text-xs text-text2">{transaction.transacted_at}</p>
                 </div>
-                <p className={transaction.type === 'expense' ? 'text-red-300' : 'text-green-300'}>
+                <p className={transaction.type === 'expense' ? 'text-danger' : 'text-success'}>
                   {transaction.type === 'expense' ? '-' : '+'}
                   {formatCurrency(transaction.amount)}
                 </p>
@@ -191,88 +228,36 @@ export default function DashboardPage() {
         </Card>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>💡 今月のAIアドバイス</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {adviceLoading ? <p className="text-sm text-text2">アドバイスを読み込み中...</p> : null}
-            {!adviceLoading && !advice ? <p className="text-sm text-text2">アドバイスはまだありません。</p> : null}
-            {advice?.content.urgent.slice(0, 2).map((item) => (
-              <article key={item.title} className="rounded-lg border border-accent/20 bg-accent/10 p-3">
-                <h3 className="text-sm font-semibold text-accent">{item.title}</h3>
-                <p className="mt-1 text-xs text-text2">{item.body}</p>
-              </article>
-            ))}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>🎯 ライフプランの進捗</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {goals.length === 0 ? <p className="text-sm text-text2">目標がまだ登録されていません。</p> : null}
-            {goals.map((goal) => (
-              <div key={goal.id} className="rounded-lg border border-white/10 bg-card2 p-3">
-                <div className="flex items-center justify-between">
-                  <p className="text-sm font-semibold">
-                    {goal.icon} {goal.title}
-                  </p>
-                  <p className="text-xs text-text2">{goal.target_year}年</p>
-                </div>
-                <div className="mt-2 h-2 rounded-full bg-black/30">
-                  <div className="h-full rounded-full bg-accent2" style={{ width: `${goal.progress_rate * 100}%` }} />
-                </div>
-                <p className="mt-1 text-xs text-text2">
-                  {formatCurrency(goal.saved_amount)} / {formatCurrency(goal.target_amount)}
+      <Card>
+        <CardHeader>
+          <CardTitle>ライフプランの進捗</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {goals.length === 0 ? (
+            <div className="grid min-h-[190px] place-items-center rounded-xl border border-dashed border-border bg-[#fbfffd] text-sm text-text2">
+              目標がまだ登録されていません。
+            </div>
+          ) : null}
+          {goals.map((goal) => (
+            <Link key={goal.id} href="/future" className="block rounded-xl bg-card2 p-3 transition-colors hover:bg-accent/10">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-semibold text-text">
+                  {goal.icon} {goal.title}
                 </p>
+                <p className="text-xs text-text2">{goal.target_year}年</p>
               </div>
-            ))}
-          </CardContent>
-        </Card>
-      </div>
+              <div className="mt-2 h-2 rounded-full bg-[rgba(47,74,122,0.12)]">
+                <div className="h-full rounded-full bg-accent2" style={{ width: `${goal.progress_rate * 100}%` }} />
+              </div>
+              <p className="mt-1 text-xs text-text2">
+                {formatCurrency(goal.saved_amount)} / {formatCurrency(goal.target_amount)}
+              </p>
+            </Link>
+          ))}
+        </CardContent>
+      </Card>
+
       <AddExpenseModal open={expenseModalOpen} onOpenChange={setExpenseModalOpen} />
     </div>
-  )
-}
-
-function StatCard({
-  label,
-  value,
-  valueFormatter = formatCurrency,
-  subLabel,
-  progress,
-  progressLabel,
-  tone,
-}: {
-  label: string
-  value: number
-  valueFormatter?: (value: number) => string
-  subLabel: string
-  progress: number
-  progressLabel: string
-  tone: 'warn' | 'blue' | 'green'
-}) {
-  const toneClass = tone === 'warn' ? 'bg-warn' : tone === 'blue' ? 'bg-accent2' : 'bg-accent'
-
-  return (
-    <Card>
-      <CardContent>
-        <p className="text-xs text-text2">{label}</p>
-        <p className="mt-1 font-display text-3xl font-bold">{valueFormatter(value)}</p>
-        <p className="mt-1 text-xs text-text2">{subLabel}</p>
-        <div className="mt-3">
-          <div className="mb-1 flex justify-between text-[11px] text-text2">
-            <span>{progressLabel}</span>
-            <span>{formatPercent(progress)}</span>
-          </div>
-          <div className="h-2 rounded-full bg-black/30">
-            <div className={`h-full rounded-full ${toneClass}`} style={{ width: `${Math.min(progress, 1) * 100}%` }} />
-          </div>
-        </div>
-      </CardContent>
-    </Card>
   )
 }

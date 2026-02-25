@@ -5,7 +5,7 @@ import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, X
 interface TrendPoint {
   label: string
   expense: number
-  saving: number
+  saving?: number
   budget?: number
 }
 
@@ -18,21 +18,29 @@ export function TrendChart({ data }: TrendChartProps) {
     <div className="h-56 w-full">
       <ResponsiveContainer>
         <LineChart data={data}>
-          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" />
-          <XAxis dataKey="label" stroke="#7a8aaa" fontSize={12} />
-          <YAxis stroke="#7a8aaa" fontSize={12} />
+          <CartesianGrid strokeDasharray="3 3" stroke="rgba(47,74,122,0.12)" />
+          <XAxis dataKey="label" stroke="#6b857b" fontSize={12} />
+          <YAxis stroke="#6b857b" fontSize={12} />
           <Tooltip
             contentStyle={{
-              background: '#131929',
-              border: '1px solid rgba(255,255,255,0.1)',
+              background: '#ffffff',
+              border: '1px solid rgba(47,74,122,0.12)',
               borderRadius: 12,
+              boxShadow: '0 10px 24px rgba(35,55,95,0.08)',
             }}
           />
           <Legend />
-          <Line type="monotone" dataKey="expense" stroke="#4af0b0" strokeWidth={2} dot={false} name="支出" />
-          <Line type="monotone" dataKey="saving" stroke="#6c8fff" strokeWidth={2} dot={false} name="貯蓄" />
+          <Line type="monotone" dataKey="expense" stroke="#2fbf8f" strokeWidth={2.4} dot={false} name="支出" />
           {data.some((d) => d.budget !== undefined) && (
-            <Line type="monotone" dataKey="budget" stroke="#ffb547" strokeWidth={2} dot={false} name="予算上限" />
+            <Line
+              type="monotone"
+              dataKey="budget"
+              stroke="#e9a33f"
+              strokeWidth={2.2}
+              strokeDasharray="7 6"
+              dot={false}
+              name="予算上限"
+            />
           )}
         </LineChart>
       </ResponsiveContainer>

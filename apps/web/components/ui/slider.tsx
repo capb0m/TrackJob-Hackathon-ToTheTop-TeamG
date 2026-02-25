@@ -19,7 +19,7 @@ export function Slider({ className, value, min, max, step = 1, onValueChange, ..
       step={step}
       value={value}
       onChange={(event) => onValueChange(Number(event.target.value))}
-      className={cn('h-2 w-full cursor-pointer appearance-none rounded-full bg-white/10 accent-accent', className)}
+      className={cn('h-2 w-full cursor-pointer appearance-none rounded-full bg-border/60 accent-accent', className)}
       {...props}
     />
   )

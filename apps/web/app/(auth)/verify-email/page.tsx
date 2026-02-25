@@ -5,7 +5,7 @@ import Link from 'next/link'
 export default function VerifyEmailPage() {
   return (
     <main className="flex min-h-screen items-center justify-center px-4">
-      <div className="w-full max-w-md rounded-2xl border border-white/10 bg-card p-6 text-center">
+      <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 text-center shadow-[0_10px_28px_rgba(35,55,95,0.06)]">
         <div className="mb-4 text-5xl">📧</div>
         <h1 className="font-display text-2xl font-bold">メールを確認してください</h1>
         <p className="mt-3 text-sm text-text2">

@@ -55,7 +55,7 @@ export default function BudgetPage() {
             <CardTitle>月次予算設定</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="mb-4 flex items-center justify-between rounded-lg bg-bg p-4">
+            <div className="mb-4 flex items-center justify-between rounded-xl border border-border bg-card2 p-4">
               <div>
                 <p className="text-xs text-text2">予算総額（{yearMonth}）</p>
                 <p className="font-display text-2xl font-bold">{formatCurrency(budgetSummary?.total_budget ?? 0)}</p>
@@ -67,7 +67,7 @@ export default function BudgetPage() {
             </div>
 
             {budgetsLoading ? <p className="text-sm text-text2">予算データを読み込み中...</p> : null}
-            {budgetsError ? <p className="text-sm text-red-300">予算データの取得に失敗しました。</p> : null}
+            {budgetsError ? <p className="text-sm text-danger">予算データの取得に失敗しました。</p> : null}
 
             {!budgetsLoading && !budgetsError ? (
               <BudgetEditForm
@@ -92,12 +92,12 @@ export default function BudgetPage() {
           </CardHeader>
           <CardContent className="space-y-3">
             {goalsLoading ? <p className="text-sm text-text2">目標データを読み込み中...</p> : null}
-            {goalsError ? <p className="text-sm text-red-300">目標データの取得に失敗しました。</p> : null}
+            {goalsError ? <p className="text-sm text-danger">目標データの取得に失敗しました。</p> : null}
 
             {!goalsLoading && goals.length === 0 ? <p className="text-sm text-text2">目標がまだ登録されていません。</p> : null}
 
             {goals.map((goal) => (
-              <div key={goal.id} className="rounded-lg border border-white/10 bg-card2 p-3">
+              <div key={goal.id} className="rounded-xl border border-border bg-card2 p-3">
                 <div className="flex items-center justify-between">
                   <p className="text-sm font-semibold">
                     {goal.icon} {goal.title}
@@ -109,7 +109,7 @@ export default function BudgetPage() {
                 <p className="mt-1 text-xs text-text2">
                   {goal.target_year}年 / {formatCurrency(goal.saved_amount)} / {formatCurrency(goal.target_amount)}
                 </p>
-                <div className="mt-2 h-2 rounded-full bg-black/30">
+                <div className="mt-2 h-2 rounded-full bg-[rgba(47,74,122,0.12)]">
                   <div className="h-full rounded-full bg-accent2" style={{ width: `${goal.progress_rate * 100}%` }} />
                 </div>
                 <div className="mt-2 flex gap-2">

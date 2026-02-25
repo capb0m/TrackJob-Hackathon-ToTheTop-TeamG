@@ -125,7 +125,7 @@ export default function FuturePage() {
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="font-display text-2xl font-bold">将来設計</h1>
+        <h1 className="font-display text-2xl font-bold">ライフプラン</h1>
         <p className="text-sm text-text2">前提条件を変更して資産推移を確認できます</p>
       </div>
 
@@ -135,7 +135,7 @@ export default function FuturePage() {
         </CardHeader>
         <CardContent className="grid gap-4 md:grid-cols-2">
           {isLoading ? <p className="text-sm text-text2 md:col-span-2">前提条件を読み込み中...</p> : null}
-          {error ? <p className="text-sm text-red-300 md:col-span-2">前提条件の取得に失敗しました。</p> : null}
+          {error ? <p className="text-sm text-danger md:col-span-2">前提条件の取得に失敗しました。</p> : null}
 
           <SliderField
             label="年齢"
@@ -188,7 +188,7 @@ export default function FuturePage() {
           />
           <div className="self-end">
             {runSimulation.isLoading ? <p className="text-xs text-text2">初回シミュレーションを読み込み中...</p> : null}
-            {runSimulation.error ? <p className="text-xs text-warn">シミュレーションAPI取得に失敗したため、表示はフォールバック値です。</p> : null}
+            {runSimulation.error ? <p className="text-xs text-[#9f6f16]">シミュレーションAPI取得に失敗したため、表示はフォールバック値です。</p> : null}
             <p className="text-xs text-accent2">{simulationStatus}</p>
           </div>
         </CardContent>
@@ -224,7 +224,7 @@ export default function FuturePage() {
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead>
-                <tr className="border-b border-white/10 text-text2">
+                <tr className="border-b border-border text-text2">
                   <th className="py-2">シナリオ</th>
                   <th className="py-2">達成確率</th>
                   <th className="py-2">月投資額</th>
@@ -232,7 +232,7 @@ export default function FuturePage() {
               </thead>
               <tbody>
                 {scenarioRows.map((scenario) => (
-                  <tr key={scenario.name} className="border-b border-white/5">
+                  <tr key={scenario.name} className="border-b border-border/60">
                     <td className="py-2">{scenario.name}</td>
                     <td className="py-2">{Math.round(scenario.probability * 100)}%</td>
                     <td className="py-2">¥{scenario.monthlyInvestment.toLocaleString('ja-JP')}</td>
@@ -265,7 +265,7 @@ function SliderField({
   onChange: (value: number) => void
 }) {
   return (
-    <div className="space-y-2 rounded-lg border border-white/10 bg-card2 p-3">
+    <div className="space-y-2 rounded-xl border border-border bg-card2 p-3">
       <div className="flex items-center justify-between">
         <p className="text-xs text-text2">{label}</p>
         <p className="font-display text-base font-semibold text-accent">{value}</p>

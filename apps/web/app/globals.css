@@ -1,16 +1,20 @@
 @import 'tailwindcss';
 
 :root {
-  --bg: #0a0e1a;
-  --bg2: #0f1524;
-  --card: #131929;
-  --card2: #1a2235;
-  --accent: #4af0b0;
-  --accent2: #6c8fff;
-  --accent3: #ff7eb3;
-  --warn: #ffb547;
-  --text: #e8edf8;
-  --text2: #7a8aaa;
+  --bg: #f6f8fc;
+  --bg2: #ffffff;
+  --card: #ffffff;
+  --card2: #f7f9ff;
+  --border: rgba(47, 74, 122, 0.1);
+  --accent: #2fbf8f;
+  --accent2: #66d9b8;
+  --accent3: #b8f3e3;
+  --warn: #ffd27a;
+  --danger: #e96b7f;
+  --success: #24b47e;
+  --text: #18352b;
+  --text2: #4f6f63;
+  --text3: #8aa79c;
 }
 
 * {
@@ -20,13 +24,17 @@
 body {
   margin: 0;
   min-height: 100vh;
-  background: radial-gradient(circle at right top, rgba(108, 143, 255, 0.08), transparent 40%),
-    radial-gradient(circle at left bottom, rgba(74, 240, 176, 0.08), transparent 35%), var(--bg);
+  background:
+    radial-gradient(circle at 12% 10%, rgba(102, 217, 184, 0.12), transparent 38%),
+    radial-gradient(circle at 88% 12%, rgba(47, 191, 143, 0.1), transparent 40%),
+    radial-gradient(circle at 70% 82%, rgba(184, 243, 227, 0.12), transparent 38%),
+    var(--bg);
   color: var(--text);
 }
 
 .font-display {
-  font-family: var(--font-syne), sans-serif;
+  font-family: var(--font-noto), 'Avenir Next', 'Hiragino Kaku Gothic ProN', sans-serif;
+  font-variant-numeric: tabular-nums;
 }
 
 .font-body {

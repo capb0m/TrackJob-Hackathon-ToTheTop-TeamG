@@ -27,7 +27,7 @@ export function Dialog({ open, onOpenChange, children }: DialogProps) {
       role="dialog"
       aria-modal="true"
       tabIndex={-1}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-[#0a0e1ad9] px-4 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(24,53,43,0.28)] px-4 backdrop-blur-[3px]"
       onClick={() => onOpenChange(false)}
       onKeyDown={(event) => {
         if (event.key === 'Escape') {
@@ -44,7 +44,7 @@ export function DialogContent({ className, ...props }: React.HTMLAttributes<HTML
   return (
     <div
       className={cn(
-        'w-full max-w-lg rounded-2xl border border-white/10 bg-card text-text shadow-[0_20px_80px_rgba(0,0,0,0.4)]',
+        'w-full max-w-lg rounded-2xl border border-border bg-card text-text shadow-[0_18px_40px_rgba(35,55,95,0.14)]',
         className,
       )}
       {...props}
@@ -53,7 +53,7 @@ export function DialogContent({ className, ...props }: React.HTMLAttributes<HTML
 }
 
 export function DialogHeader({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn('flex items-center justify-between border-b border-white/10 px-6 py-4', className)} {...props} />
+  return <div className={cn('flex items-center justify-between border-b border-border px-6 py-4', className)} {...props} />
 }
 
 export function DialogTitle({ className, ...props }: React.HTMLAttributes<HTMLHeadingElement>) {
@@ -65,5 +65,5 @@ export function DialogBody({ className, ...props }: React.HTMLAttributes<HTMLDiv
 }
 
 export function DialogFooter({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn('flex justify-end gap-2 border-t border-white/10 px-6 py-4', className)} {...props} />
+  return <div className={cn('flex justify-end gap-2 border-t border-border px-6 py-4', className)} {...props} />
 }

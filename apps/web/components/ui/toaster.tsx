@@ -28,9 +28,9 @@ export function Toaster() {
           key={toast.id}
           className={cn(
             'pointer-events-auto rounded-lg border px-4 py-3 shadow-lg backdrop-blur-sm',
-            toast.variant === 'success' && 'border-green-400/40 bg-green-500/20',
-            toast.variant === 'error' && 'border-red-400/40 bg-red-500/20',
-            (!toast.variant || toast.variant === 'default') && 'border-white/20 bg-card2/95',
+            toast.variant === 'success' && 'border-success/35 bg-success/15',
+            toast.variant === 'error' && 'border-danger/35 bg-danger/15',
+            (!toast.variant || toast.variant === 'default') && 'border-border bg-card/95',
           )}
         >
           <p className="text-sm font-semibold text-text">{toast.title}</p>

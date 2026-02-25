@@ -16,18 +16,19 @@ export function ScoreHistoryChart({ data }: ScoreHistoryChartProps) {
     <div className="h-56 w-full">
       <ResponsiveContainer>
         <LineChart data={data}>
-          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" />
-          <XAxis dataKey="month" stroke="#7a8aaa" fontSize={12} />
-          <YAxis domain={[0, 100]} stroke="#7a8aaa" fontSize={12} />
+          <CartesianGrid strokeDasharray="3 3" stroke="rgba(47,74,122,0.12)" />
+          <XAxis dataKey="month" stroke="#6b857b" fontSize={12} />
+          <YAxis domain={[0, 100]} stroke="#6b857b" fontSize={12} />
           <Tooltip
             formatter={(value: number) => `${value}点`}
             contentStyle={{
-              background: '#131929',
-              border: '1px solid rgba(255,255,255,0.1)',
+              background: '#ffffff',
+              border: '1px solid rgba(47,74,122,0.12)',
               borderRadius: 12,
+              boxShadow: '0 10px 24px rgba(35,55,95,0.08)',
             }}
           />
-          <Line type="monotone" dataKey="score" stroke="#6c8fff" strokeWidth={3} dot={{ fill: '#6c8fff' }} />
+          <Line type="monotone" dataKey="score" stroke="#2fbf8f" strokeWidth={3} dot={{ fill: '#2fbf8f' }} />
         </LineChart>
       </ResponsiveContainer>
     </div>

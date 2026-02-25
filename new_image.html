@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>KakeAI — ダッシュボード</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #f6f8fc;
+      --bg2: #ffffff;
+      --card: #ffffff;
+      --card2: #f7f9ff;
+      --border: rgba(47, 74, 122, 0.10);
+      --accent: #2fbf8f;
+      --accent2: #66d9b8;
+      --accent3: #b8f3e3;
+      --warn: #ffd27a;
+      --text: #18352b;
+      --text2: #4f6f63;
+      --text3: #8aa79c;
+      --green: #24b47e;
+      --red: #e96b7f;
+      --radius: 16px;
+      --radius-sm: 10px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Noto Sans JP', sans-serif;
+      background: var(--bg);
+      background-image: radial-gradient(circle at 12% 10%, rgba(102,217,184,0.12), transparent 38%), radial-gradient(circle at 88% 12%, rgba(47,191,143,0.10), transparent 40%), radial-gradient(circle at 70% 82%, rgba(184,243,227,0.12), transparent 38%);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    .app { display: flex; min-height: 100vh; }
+
+    /* Sidebar */
+    .sidebar {
+      width: 232px;
+      background: var(--bg2);
+      box-shadow: 8px 0 24px rgba(40, 56, 90, 0.06);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      padding: 28px 0;
+      position: fixed;
+      top: 0; left: 0; bottom: 0;
+      z-index: 10;
+    }
+
+    .logo {
+      padding: 0 16px 28px;
+      font-family: 'Syne', sans-serif;
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: -0.4px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .logo-icon {
+      width: 32px; height: 32px;
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #ffffff;
+      font-weight: 800;
+      font-size: 14px;
+    }
+    .logo span { color: var(--accent); }
+
+    .nav-group { padding: 0 12px; margin-bottom: 0; }
+    .nav-title {
+      color: var(--text3);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding: 0 12px 8px;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: var(--radius-sm);
+      color: var(--text2);
+      font-size: 13.5px;
+      cursor: pointer;
+      position: relative;
+      transition: all .2s ease;
+      user-select: none;
+    }
+    .nav-item:hover { background: rgba(47,191,143,0.10); color: var(--text); }
+    .nav-item.active {
+      color: var(--accent);
+      background: rgba(54,207,162,0.14);
+      font-weight: 500;
+    }
+    .nav-item.active::before {
+      content: "";
+      position: absolute;
+      left: 0; top: 20%; bottom: 20%;
+      width: 3px;
+      border-radius: 0 2px 2px 0;
+      background: var(--accent);
+    }
+
+    .nav-group {
+      padding: 0 12px;
+      margin-bottom: 0;
+    }
+    .nav-group .nav-item {
+      padding: 10px 12px;
+      border-radius: var(--radius-sm);
+      color: var(--text2);
+      font-size: 13.5px;
+      cursor: pointer;
+      position: relative;
+      transition: all .2s ease;
+      user-select: none;
+    }
+    .nav-group .nav-item:hover {
+      background: rgba(47,191,143,0.10);
+      color: var(--text);
+    }
+    .sidebar-main-nav { margin-bottom: 0; }
+    .sidebar-ai-nav { margin-top: 0; }
+    .sidebar-bottom-nav {
+      margin-top: auto;
+      padding-top: 10px;
+      border-top: 1px solid var(--border);
+    }
+
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 8px 12px 10px;
+    }
+
+    /* Removed divider and merged nav-groups as per instructions */
+
+    /* Main */
+    .main {
+      margin-left: 232px;
+      width: calc(100% - 232px);
+      padding: 28px 28px 32px;
+    }
+
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 20px;
+      gap: 12px;
+    }
+
+    .page-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      margin-bottom: 4px;
+      color: #1c3b30;
+    }
+    .page-sub {
+      color: var(--text2);
+      font-size: 13px;
+      line-height: 1.5;
+      font-weight: 500;
+    }
+
+    .header-btns { display: flex; gap: 10px; }
+    .btn {
+      border: 1px solid rgba(47,191,143,0.85);
+      background: var(--accent);
+      color: #ffffff;
+      padding: 16px 24px;
+      font-size: 16px;
+      font-weight: 700;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all .2s ease;
+      min-height: 42px;
+      box-shadow: 0 6px 16px rgba(35,55,95,0.08);
+    }
+    .btn:hover { border-color: rgba(36,180,126,0.95); color: #ffffff; background: var(--green); }
+
+    .grid-3 { display: grid; grid-template-columns: 1fr 2fr; gap: 14px; margin-bottom: 16px; }
+    .grid-2 { display: grid; grid-template-columns: 1.35fr 1fr; gap: 14px; margin-bottom: 16px; }
+
+    .card, .stat-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      box-shadow: 0 10px 28px rgba(35, 55, 95, 0.06);
+      border-radius: var(--radius);
+      padding: 16px;
+    }
+
+    .stat-card { position: relative; overflow: hidden; min-height: 232px; }
+    .stat-card::after {
+      content: none;
+    }
+
+    .stat-label {
+      color: var(--text2);
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+    .stat-value {
+      font-family: 'Syne', sans-serif;
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: -0.8px;
+      margin-bottom: 6px;
+    }
+    .stat-note {
+      color: var(--text2);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .card-title {
+      color: var(--text2);
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+      text-transform: none;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .empty-box {
+      background: #fbfffd;
+      border: 1px dashed rgba(79,111,99,0.20);
+      border-radius: 12px;
+      min-height: 190px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text2);
+      font-size: 13px;
+      text-align: center;
+      padding: 20px;
+    }
+
+    .empty-box.small { min-height: 190px; }
+    .empty-box.tall { min-height: 230px; }
+
+    .footer-note {
+      color: var(--text3);
+      font-size: 11px;
+      margin-top: 10px;
+    }
+
+    .summary-combo {
+      display: flex;
+      align-items: stretch;
+      justify-content: space-between;
+      gap: 14px;
+      min-height: 100%;
+    }
+
+    .summary-left {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 18px;
+    }
+
+    .summary-row {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .summary-row .label {
+      color: var(--text2);
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    .summary-row .value {
+      font-family: 'Noto Sans JP', sans-serif;
+      font-size: 30px;
+      font-weight: 700;
+      letter-spacing: -0.2px;
+      color: var(--text);
+    }
+
+    .summary-divider {
+      height: 1px;
+      background: rgba(79,111,99,0.18);
+    }
+
+    .summary-right {
+      width: 170px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .budget-ring {
+      --pct: 0;
+      width: 132px;
+      height: 132px;
+      border-radius: 50%;
+      background: conic-gradient(var(--red) calc(var(--pct) * 1%), rgba(47,191,143,0.14) 0);
+      display: grid;
+      place-items: center;
+      position: relative;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.04);
+    }
+
+    .budget-ring::before {
+      content: "";
+      position: absolute;
+      inset: 13px;
+      border-radius: 50%;
+      background: var(--card);
+      border: 1px solid rgba(47,74,122,0.08);
+    }
+
+    .budget-ring-content {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      line-height: 1.2;
+    }
+
+    .budget-ring-content .percent {
+      font-family: 'Noto Sans JP', sans-serif;
+      font-size: 24px;
+      font-weight: 700;
+      letter-spacing: -0.2px;
+      color: var(--text);
+    }
+
+    .budget-ring-content .caption {
+      display: none;
+    }
+
+    .advice-wide {
+      min-height: 232px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      padding-top: 16px;
+    }
+
+    .advice-wide .stat-label {
+      margin-bottom: 12px;
+    }
+
+    .advice-wide .stat-note {
+      font-size: 13px;
+      line-height: 1.7;
+      color: var(--text2);
+    }
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(24, 53, 43, 0.28);
+  backdrop-filter: blur(3px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 20px;
+}
+
+.modal-overlay.show {
+  display: flex;
+}
+
+.expense-modal {
+  width: min(640px, 100%);
+  background: #ffffff;
+  border: 1px solid rgba(47,74,122,0.10);
+  border-radius: 18px;
+  box-shadow: 0 18px 40px rgba(35,55,95,0.14);
+  overflow: hidden;
+}
+
+.expense-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.expense-modal-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.modal-close {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  border: 1px solid rgba(47,74,122,0.10);
+  background: #fff;
+  color: var(--text2);
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all .2s ease;
+}
+
+.modal-close:hover {
+  background: #f3fffb;
+  color: var(--text);
+  border-color: rgba(47,191,143,0.30);
+}
+
+.expense-form {
+  padding: 20px;
+  display: grid;
+  gap: 16px;
+}
+
+.form-field {
+  display: grid;
+  gap: 8px;
+}
+
+.form-label {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text2);
+}
+
+.form-input,
+.form-select {
+  width: 100%;
+  border: 1px solid rgba(47,74,122,0.14);
+  background: #ffffff;
+  color: var(--text);
+  border-radius: 14px;
+  padding: 14px 16px;
+  font-size: 16px;
+  outline: none;
+  transition: border-color .2s ease, box-shadow .2s ease;
+}
+
+.form-input:focus,
+.form-select:focus {
+  border-color: rgba(47,191,143,0.55);
+  box-shadow: 0 0 0 3px rgba(47,191,143,0.10);
+}
+
+.form-input::placeholder {
+  color: #9ab0a6;
+}
+
+.category-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.category-option {
+  border: 1px solid rgba(47,74,122,0.14);
+  background: #ffffff;
+  color: var(--text);
+  border-radius: 14px;
+  min-height: 52px;
+  padding: 12px 10px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .2s ease;
+}
+
+.category-option:hover {
+  border-color: rgba(47,191,143,0.35);
+  background: #f3fffb;
+}
+
+.category-option.active {
+  border-color: rgba(47,191,143,0.85);
+  background: rgba(47,191,143,0.10);
+  color: var(--accent);
+}
+
+.form-actions {
+  margin-top: 8px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.form-submit {
+  border: 1px solid rgba(47,191,143,0.85);
+  background: var(--accent);
+  color: #ffffff;
+  padding: 14px 22px;
+  font-size: 16px;
+  font-weight: 700;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all .2s ease;
+  min-width: 150px;
+  box-shadow: 0 6px 16px rgba(35,55,95,0.08);
+}
+
+.form-submit:hover {
+  background: var(--green);
+  border-color: rgba(36,180,126,0.95);
+}
+
+    @media (max-width: 980px) {
+      .sidebar { position: static; width: 100%; height: auto; }
+      .app { flex-direction: column; }
+      .main { margin-left: 0; width: 100%; }
+      .grid-3, .grid-2 { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="logo">
+        <div class="logo-icon">K</div>
+        Kake<span>AI</span>
+      </div>
+
+      <div class="nav-group sidebar-main-nav">
+        <div class="nav-item active">ダッシュボード</div>
+        <div class="nav-item">支出管理</div>
+        <div class="nav-item">予算と目標</div>
+        <div class="nav-item">ライフプラン</div>
+      </div>
+
+      <div class="nav-group sidebar-ai-nav">
+        <div class="nav-item">KakeAI</div>
+      </div>
+
+      <div class="nav-group sidebar-bottom-nav">
+        <div class="nav-item">設定</div>
+        <div class="nav-item">ログアウト</div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="page-header">
+        <div>
+          <div class="page-title">おかえりなさい、くろがねさん。</div>
+          <div class="page-sub">2026年2月24日（金）ー いい調子です。支出をコントロールできていますね。</div>
+        </div>
+        <div class="header-btns">
+          <button class="btn" id="openExpenseBtn">＋ 支出を追加</button>
+        </div>
+      </div>
+
+      <!-- 上段 -->
+      <div class="grid-3">
+        <div class="stat-card green">
+          <div class="summary-combo">
+            <div class="summary-left">
+              <div class="summary-row">
+                <div class="label">今月の支出</div>
+                <div class="value">¥0</div>
+              </div>
+              <div class="summary-divider"></div>
+              <div class="summary-row">
+                <div class="label">今月の予算</div>
+                <div class="value">¥0</div>
+              </div>
+            </div>
+            <div class="summary-right">
+              <div class="budget-ring" style="--pct: 0;">
+                <div class="budget-ring-content">
+                  <div class="percent">0%</div>
+                  <div class="caption">支出率</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="stat-card orange advice-wide">
+          <div class="stat-label">KakeAIからの提案</div>
+          <div class="stat-note">アドバイスはまだありません。支出・収入の記録が増えると、使い方の傾向を見て提案します。</div>
+        </div>
+      </div>
+
+      <!-- 中段 -->
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">支出トレンド</div>
+          <div class="empty-box tall">記録はまだありません。</div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">最近の収支記録</div>
+          <div class="empty-box small">記録はまだありません。</div>
+        </div>
+      </div>
+
+      <!-- 下段 -->
+      <div class="card">
+        <div class="card-title">ライフプランの進捗</div>
+        <div class="empty-box">目標がまだ登録されていません。</div>
+      </div>
+    </main>
+  </div>
+  <div class="modal-overlay" id="expenseModalOverlay" aria-hidden="true">
+    <div class="expense-modal" role="dialog" aria-modal="true" aria-labelledby="expenseModalTitle">
+      <div class="expense-modal-header">
+        <div class="expense-modal-title" id="expenseModalTitle">支出を追加</div>
+        <button class="modal-close" id="closeExpenseModalBtn" aria-label="閉じる">×</button>
+      </div>
+
+      <form class="expense-form" id="expenseForm">
+        <div class="form-field">
+          <label class="form-label" for="expenseAmount">金額</label>
+          <input class="form-input" id="expenseAmount" name="amount" type="text" inputmode="numeric" autocomplete="off" placeholder="例: 1,200" />
+        </div>
+
+        <div class="form-field">
+          <label class="form-label" for="expenseCategoryInput">カテゴリ</label>
+          <input type="hidden" id="expenseCategoryInput" name="category" value="食費" />
+          <div class="category-grid" id="expenseCategoryGrid">
+            <button type="button" class="category-option active" data-category="食費">食費</button>
+            <button type="button" class="category-option" data-category="住居費">住居費</button>
+            <button type="button" class="category-option" data-category="交通費">交通費</button>
+            <button type="button" class="category-option" data-category="娯楽">娯楽</button>
+            <button type="button" class="category-option" data-category="衣類">衣類</button>
+            <button type="button" class="category-option" data-category="通信費">通信費</button>
+            <button type="button" class="category-option" data-category="医療">医療</button>
+            <button type="button" class="category-option" data-category="交際費">交際費</button>
+          </div>
+        </div>
+
+        <div class="form-field">
+          <label class="form-label" for="expenseTitle">タイトル（任意）</label>
+          <input class="form-input" id="expenseTitle" name="title" type="text" placeholder="例: ランチ、コンビニ..." />
+        </div>
+
+        <div class="form-field">
+          <label class="form-label" for="expenseDate">日付</label>
+          <input class="form-input" id="expenseDate" name="date" type="date" />
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="form-submit">追加する</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const openExpenseBtn = document.getElementById('openExpenseBtn');
+      const overlay = document.getElementById('expenseModalOverlay');
+      const closeExpenseModalBtn = document.getElementById('closeExpenseModalBtn');
+      const expenseForm = document.getElementById('expenseForm');
+      const expenseDate = document.getElementById('expenseDate');
+      const expenseAmount = document.getElementById('expenseAmount');
+      const expenseCategoryGrid = document.getElementById('expenseCategoryGrid');
+      const expenseCategoryInput = document.getElementById('expenseCategoryInput');
+
+      if (!openExpenseBtn || !overlay || !closeExpenseModalBtn || !expenseForm || !expenseDate || !expenseAmount || !expenseCategoryGrid || !expenseCategoryInput) return;
+
+      const setToday = () => {
+        const today = new Date();
+        const yyyy = today.getFullYear();
+        const mm = String(today.getMonth() + 1).padStart(2, '0');
+        const dd = String(today.getDate()).padStart(2, '0');
+        expenseDate.value = `${yyyy}-${mm}-${dd}`;
+      };
+
+      const openModal = () => {
+        setToday();
+        overlay.classList.add('show');
+        overlay.setAttribute('aria-hidden', 'false');
+      };
+
+      const closeModal = () => {
+        overlay.classList.remove('show');
+        overlay.setAttribute('aria-hidden', 'true');
+      };
+
+      openExpenseBtn.addEventListener('click', openModal);
+      closeExpenseModalBtn.addEventListener('click', closeModal);
+
+      const formatAmountInput = () => {
+        const digits = (expenseAmount.value || '').replace(/\D/g, '');
+        expenseAmount.value = digits ? Number(digits).toLocaleString('ja-JP') : '';
+      };
+
+      expenseAmount.addEventListener('input', formatAmountInput);
+
+      expenseCategoryGrid.addEventListener('click', (e) => {
+        const target = e.target.closest('.category-option');
+        if (!target) return;
+
+        expenseCategoryGrid.querySelectorAll('.category-option').forEach((btn) => {
+          btn.classList.remove('active');
+        });
+
+        target.classList.add('active');
+        expenseCategoryInput.value = target.dataset.category || '';
+      });
+
+      overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) closeModal();
+      });
+
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && overlay.classList.contains('show')) {
+          closeModal();
+        }
+      });
+
+      expenseForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        expenseAmount.value = (expenseAmount.value || '').replace(/,/g, '');
+        closeModal();
+      });
+    })();
+  </script>
+</body>
+</html>

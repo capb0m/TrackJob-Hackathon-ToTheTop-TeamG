@@ -29,7 +29,7 @@ export function Tabs({ options, value, onValueChange, ariaLabel = 'タブ一覧'
   }
 
   return (
-    <div className="inline-flex rounded-lg border border-white/10 bg-card p-1" role="tablist" aria-label={ariaLabel}>
+    <div className="inline-flex rounded-xl border border-border bg-card2 p-1" role="tablist" aria-label={ariaLabel}>
       {options.map((option, index) => (
         <button
           key={option.value}
@@ -58,8 +58,8 @@ export function Tabs({ options, value, onValueChange, ariaLabel = 'タブ一覧'
             }
           }}
           className={cn(
-            'rounded-md px-3 py-1.5 text-xs font-medium transition-colors',
-            value === option.value ? 'bg-card2 text-text' : 'text-text2 hover:text-text',
+            'rounded-lg px-3 py-1.5 text-xs font-medium transition-colors',
+            value === option.value ? 'bg-card text-text shadow-[0_4px_12px_rgba(35,55,95,0.08)]' : 'text-text2 hover:text-text',
           )}
         >
           {option.label}

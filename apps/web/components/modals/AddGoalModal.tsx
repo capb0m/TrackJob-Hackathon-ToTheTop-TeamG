@@ -79,30 +79,30 @@ export function AddGoalModal({ open, onOpenChange }: AddGoalModalProps) {
             <div>
               <label className="text-xs text-text2">タイトル</label>
               <Input {...register('title')} />
-              {errors.title ? <p className="text-xs text-red-300">{errors.title.message}</p> : null}
+              {errors.title ? <p className="text-xs text-danger">{errors.title.message}</p> : null}
             </div>
             <div>
               <label className="text-xs text-text2">アイコン</label>
               <Input {...register('icon')} maxLength={2} />
-              {errors.icon ? <p className="text-xs text-red-300">{errors.icon.message}</p> : null}
+              {errors.icon ? <p className="text-xs text-danger">{errors.icon.message}</p> : null}
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-xs text-text2">目標金額</label>
                 <Input type="number" {...register('targetAmount', { valueAsNumber: true })} />
-                {errors.targetAmount ? <p className="text-xs text-red-300">{errors.targetAmount.message}</p> : null}
+                {errors.targetAmount ? <p className="text-xs text-danger">{errors.targetAmount.message}</p> : null}
               </div>
               <div>
                 <label className="text-xs text-text2">現在貯蓄額</label>
                 <Input type="number" {...register('savedAmount', { valueAsNumber: true })} />
-                {errors.savedAmount ? <p className="text-xs text-red-300">{errors.savedAmount.message}</p> : null}
+                {errors.savedAmount ? <p className="text-xs text-danger">{errors.savedAmount.message}</p> : null}
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-xs text-text2">目標年</label>
                 <Input type="number" {...register('targetYear', { valueAsNumber: true })} />
-                {errors.targetYear ? <p className="text-xs text-red-300">{errors.targetYear.message}</p> : null}
+                {errors.targetYear ? <p className="text-xs text-danger">{errors.targetYear.message}</p> : null}
               </div>
               <div>
                 <label className="text-xs text-text2">優先度</label>
@@ -116,7 +116,7 @@ export function AddGoalModal({ open, onOpenChange }: AddGoalModalProps) {
             <div>
               <label className="text-xs text-text2">月次積立額</label>
               <Input type="number" {...register('monthlySaving', { valueAsNumber: true })} />
-              {errors.monthlySaving ? <p className="text-xs text-red-300">{errors.monthlySaving.message}</p> : null}
+              {errors.monthlySaving ? <p className="text-xs text-danger">{errors.monthlySaving.message}</p> : null}
             </div>
           </form>
         </DialogBody>
