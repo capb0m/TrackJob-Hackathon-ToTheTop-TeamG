@@ -4,17 +4,26 @@ import { extractFirstJsonObject, generateGeminiChat, generateGeminiText } from '
 import { getChatSystemPrompt } from './prompts/chat'
 import { chatConfigSchema } from '../schemas/chat'
 
-// Phrases that indicate the AI has finished collecting all required info
+// Phrases that indicate the AI has finished collecting all required info.
+// Keep broad enough to catch formal/casual variants Gemini might generate.
 const COMPLETION_INDICATORS = [
   '設定は完了',
   '設定が完了',
+  '設定を完了',
   '設定完了',
+  '設定の完了',
   '完了です',
   '完了しました',
+  '完了いたしました',
+  '完了させていただきました',
   '保存してください',
+  '保存いたしました',
   '設定内容をまとめました',
+  '設定内容を確認',
   '同意いただけた',
   'ご同意いただき',
+  'ご同意ありがとう',
+  '同意ありがとうございます',
 ]
 
 function isCompletionResponse(content: string): boolean {
@@ -40,9 +49,14 @@ function extractConfigTag(content: string) {
       .trim()
   }
 
+  // Replace the raw CONFIG tag with a formatted JSON code block so the
+  // conversational message is never left truncated (e.g. when the user
+  // asks the AI to show the config after setup is complete).
+  const displayBlock = configText ? `\`\`\`json\n${configText}\n\`\`\`` : ''
+
   return {
     configText,
-    cleanedContent: content.replace(match[0], '').trim(),
+    cleanedContent: content.replace(match[0], displayBlock).trim(),
   }
 }
 
@@ -185,10 +199,15 @@ export async function generateChatResponse(messages: ChatMessage[]): Promise<Cha
     console.warn('[chat] CONFIG tag present but JSON invalid, attempting extraction fallback')
   }
 
-  // Path 2: No valid CONFIG tag, but AI signals completion — extract via dedicated call
+  // Path 2: No valid CONFIG tag, but AI signals completion — extract via dedicated call.
+  // Append rawContent (AI's completion message) so the extractor has the full organized summary.
   if (isCompletionResponse(cleanedContent || rawContent)) {
     console.info('[chat] Completion detected, attempting config extraction from history')
-    const config = await extractConfigFromHistory(messages)
+    const messagesWithCompletion: ChatMessage[] = [
+      ...messages,
+      { role: 'model', content: rawContent },
+    ]
+    const config = await extractConfigFromHistory(messagesWithCompletion)
     if (config) {
       return {
         role: 'model',
