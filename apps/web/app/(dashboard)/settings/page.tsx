@@ -371,7 +371,7 @@ export default function SettingsPage() {
               <div className="flex flex-col items-center gap-3">
                 <p className="text-sm text-text2">QRコードを読み取って友だち追加</p>
                 <img
-                  src={`https://qr-official.line.me/sid/${lineBotBasicId}/compact.png`}
+                  src={`https://qr-official.line.me/sid/L/${lineBotBasicId?.replace('@', '')}.png`}
                   alt="LINE友だち追加QRコード"
                   className="h-40 w-40 rounded-xl border border-border bg-white p-2"
                 />
