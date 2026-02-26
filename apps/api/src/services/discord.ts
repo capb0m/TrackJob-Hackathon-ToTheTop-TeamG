@@ -1,6 +1,7 @@
 import { ChannelType, Client, Events, GatewayIntentBits, Partials, type Message } from 'discord.js'
 
 import { supabaseAdmin } from '../clients/supabase'
+import { ensureBucketExists } from '../lib/storage'
 import { findActiveConnectionByPlatformUserId } from '../db/repositories/connections'
 import { getCurrentYearMonth } from '../lib/date'
 import { env } from '../lib/env'
@@ -35,6 +36,8 @@ async function uploadDiscordImageToStorage(userId: string, url: string, contentT
   const buffer = Buffer.from(await response.arrayBuffer())
   const ext = contentType.includes('png') ? 'png' : contentType.includes('webp') ? 'webp' : 'jpg'
   const objectPath = `${userId}/discord-${Date.now()}.${ext}`
+
+  await ensureBucketExists('receipts')
 
   const { error } = await supabaseAdmin.storage.from('receipts').upload(objectPath, buffer, {
     contentType,
@@ -139,7 +142,7 @@ export async function startDiscordGateway() {
   })
 
   client.on(Events.MessageCreate, async (message) => {
-    // Bot 自身のメッセージは無視
+    // Bot 自身のメッセージは無視 
     if (message.author.bot) return
     // DM のみ処理
     if (message.channel.type !== ChannelType.DM) return

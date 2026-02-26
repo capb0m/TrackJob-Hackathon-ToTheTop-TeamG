@@ -14,6 +14,7 @@ import {
 import { AppError } from '../lib/errors'
 import { getCurrentYearMonth } from '../lib/date'
 import { supabaseAdmin } from '../clients/supabase'
+import { ensureBucketExists } from '../lib/storage'
 import { toIsoString } from './serializers'
 
 function mapTransaction(row: {
@@ -206,6 +207,8 @@ export async function uploadReceiptImage(userId: string, file: File) {
 
   const sanitizedName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_')
   const objectPath = `${userId}/${Date.now()}-${sanitizedName}`
+
+  await ensureBucketExists('receipts')
 
   const { error: uploadError } = await supabaseAdmin.storage
     .from('receipts')

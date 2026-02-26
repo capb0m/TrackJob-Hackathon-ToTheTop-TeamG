@@ -1,6 +1,7 @@
 import { createHmac, timingSafeEqual } from 'node:crypto'
 
 import { supabaseAdmin } from '../clients/supabase'
+import { ensureBucketExists } from '../lib/storage'
 import { findActiveConnectionByPlatformUserId } from '../db/repositories/connections'
 import { getCurrentYearMonth } from '../lib/date'
 import { env } from '../lib/env'
@@ -106,6 +107,8 @@ async function uploadLineImageToStorage(userId: string, messageId: string) {
   const contentType = response.headers.get('content-type') ?? 'image/jpeg'
   const buffer = Buffer.from(await response.arrayBuffer())
   const objectPath = `${userId}/line-${Date.now()}-${messageId}.jpg`
+
+  await ensureBucketExists('receipts')
 
   const { error } = await supabaseAdmin.storage.from('receipts').upload(objectPath, buffer, {
     contentType,
