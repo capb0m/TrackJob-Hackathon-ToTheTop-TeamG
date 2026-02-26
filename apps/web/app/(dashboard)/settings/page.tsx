@@ -302,7 +302,7 @@ export default function SettingsPage() {
           <p className="text-sm">月次サマリー通知</p>
           <button
             type="button"
-            className={`relative h-7 w-14 rounded-full transition-colors ${notificationEnabled ? 'bg-accent' : 'bg-white/20'}`}
+            className={`relative h-7 w-14 overflow-hidden rounded-full transition-colors ${notificationEnabled ? 'bg-accent' : 'bg-white/20'}`}
             onClick={() => setNotificationEnabled((prev) => !prev)}
             aria-label="月次サマリー通知のON/OFF"
           >
