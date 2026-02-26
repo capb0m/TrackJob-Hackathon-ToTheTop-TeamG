@@ -9,7 +9,7 @@ import { getSupabaseBrowserClient } from '@/lib/supabase'
 
 const navItems = [
   { href: '/dashboard', label: 'ダッシュボード', icon: '📊' },
-  { href: '/expense', label: '支出管理', icon: '💳' },
+  { href: '/expense', label: '収支管理', icon: '💳' },
   { href: '/budget', label: '予算と目標', icon: '🎯' },
   { href: '/future', label: 'ライフプラン', icon: '🔮' },
   { href: '/advice', label: 'KakeAI', icon: '💡' },

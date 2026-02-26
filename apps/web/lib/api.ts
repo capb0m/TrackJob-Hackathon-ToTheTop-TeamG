@@ -153,6 +153,16 @@ export interface CreateTransactionBody {
   transacted_at: string
 }
 
+export interface UpdateTransactionBody {
+  amount?: number
+  type?: TransactionType
+  category?: TransactionCategory
+  description?: string
+  receipt_url?: string | null
+  source?: 'dashboard' | 'line' | 'discord'
+  transacted_at?: string
+}
+
 export const transactionsApi = {
   list: (params: ListTransactionsParams = {}) =>
     apiRequestEnvelope<Transaction[]>(
@@ -172,6 +182,15 @@ export const transactionsApi = {
     apiRequest<Transaction>('/api/transactions', {
       method: 'POST',
       body: JSON.stringify(body),
+    }),
+  patch: (id: string, body: UpdateTransactionBody) =>
+    apiRequest<Transaction>(`/api/transactions/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(body),
+    }),
+  remove: (id: string) =>
+    apiRequest<void>(`/api/transactions/${id}`, {
+      method: 'DELETE',
     }),
   summary: (yearMonth?: string) =>
     apiRequest<TransactionSummary>(

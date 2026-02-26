@@ -3,7 +3,12 @@
 import { useMemo } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
-import { type CreateTransactionBody, transactionsApi, type ListTransactionsParams } from '@/lib/api'
+import {
+  type CreateTransactionBody,
+  type ListTransactionsParams,
+  transactionsApi,
+  type UpdateTransactionBody,
+} from '@/lib/api'
 import { getApiErrorMessage } from '@/lib/api-error'
 import { queryKeys } from '@/lib/query-keys'
 import { getCurrentYearMonth } from '@/lib/utils'
@@ -68,17 +73,50 @@ export function useCreateTransaction() {
 
   return useMutation({
     mutationFn: (body: CreateTransactionBody) => transactionsApi.create(body),
-    onSuccess: (_transaction, payload) => {
-      const yearMonth = payload.transacted_at.slice(0, 7)
-      void Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['transactions'] }),
-        queryClient.invalidateQueries({ queryKey: queryKeys.transactionSummary(yearMonth) }),
-        queryClient.invalidateQueries({ queryKey: ['budgets'] }),
-      ])
+    onSuccess: () => {
+      void Promise.all([queryClient.invalidateQueries({ queryKey: ['transactions'] }), queryClient.invalidateQueries({ queryKey: ['budgets'] })])
     },
     onError: (error) => {
       toast({
         title: getApiErrorMessage(error, '支出の保存に失敗しました。'),
+        variant: 'error',
+      })
+    },
+  })
+}
+
+export function usePatchTransaction() {
+  const queryClient = useQueryClient()
+  const { toast } = useToast()
+
+  return useMutation({
+    mutationFn: (payload: { id: string; body: UpdateTransactionBody }) => transactionsApi.patch(payload.id, payload.body),
+    onSuccess: () => {
+      void Promise.all([queryClient.invalidateQueries({ queryKey: ['transactions'] }), queryClient.invalidateQueries({ queryKey: ['budgets'] })])
+      toast({ title: '履歴を更新しました。', variant: 'success' })
+    },
+    onError: (error) => {
+      toast({
+        title: getApiErrorMessage(error, '履歴の更新に失敗しました。'),
+        variant: 'error',
+      })
+    },
+  })
+}
+
+export function useDeleteTransaction() {
+  const queryClient = useQueryClient()
+  const { toast } = useToast()
+
+  return useMutation({
+    mutationFn: (id: string) => transactionsApi.remove(id),
+    onSuccess: () => {
+      void Promise.all([queryClient.invalidateQueries({ queryKey: ['transactions'] }), queryClient.invalidateQueries({ queryKey: ['budgets'] })])
+      toast({ title: '履歴を削除しました。', variant: 'success' })
+    },
+    onError: (error) => {
+      toast({
+        title: getApiErrorMessage(error, '履歴の削除に失敗しました。'),
         variant: 'error',
       })
     },

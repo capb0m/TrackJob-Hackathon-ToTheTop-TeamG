@@ -199,7 +199,7 @@
 
 | パラメータ | 型 | 必須 | デフォルト | 説明 |
 |---|---|---|---|---|
-| `year_month` | string | ❌ | 当月 | 絞り込む年月（`YYYY-MM`） |
+| `year_month` | string | ❌ | 当月 | 絞り込む年月（`YYYY-MM`）。`all` を指定すると全期間 |
 | `category` | string | ❌ | - | カテゴリで絞り込む |
 | `type` | string | ❌ | - | `expense` または `income` |
 | `source` | string | ❌ | - | `dashboard` / `line` / `discord` |

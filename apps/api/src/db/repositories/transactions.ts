@@ -21,7 +21,7 @@ const SORT_COLUMN_MAP = {
 } as const
 
 type ListFilters = {
-  yearMonth: string
+  yearMonth?: string
   category?: string
   type?: 'expense' | 'income'
   source?: 'dashboard' | 'line' | 'discord'
@@ -44,12 +44,12 @@ function getMonthRange(yearMonth: string) {
 }
 
 function buildWhereClause(userId: string, filters: ListFilters) {
-  const { from, to } = getMonthRange(filters.yearMonth)
-  const conditions: SQL[] = [
-    eq(transactions.userId, userId),
-    gte(transactions.transactedAt, from),
-    lt(transactions.transactedAt, to),
-  ]
+  const conditions: SQL[] = [eq(transactions.userId, userId)]
+
+  if (filters.yearMonth) {
+    const { from, to } = getMonthRange(filters.yearMonth)
+    conditions.push(gte(transactions.transactedAt, from), lt(transactions.transactedAt, to))
+  }
 
   if (filters.category) {
     conditions.push(eq(transactions.category, filters.category))

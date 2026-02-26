@@ -49,7 +49,7 @@ function assertOwner(resourceUserId: string, userId: string) {
 export async function listUserTransactions(
   userId: string,
   query: {
-    year_month?: string
+    year_month?: string | 'all'
     category?: string
     type?: 'expense' | 'income'
     source?: 'dashboard' | 'line' | 'discord'
@@ -60,7 +60,7 @@ export async function listUserTransactions(
     order: 'asc' | 'desc'
   },
 ) {
-  const yearMonth = query.year_month ?? getCurrentYearMonth()
+  const yearMonth = query.year_month === 'all' ? undefined : (query.year_month ?? getCurrentYearMonth())
 
   const { rows, total } = await listTransactions(userId, {
     yearMonth,

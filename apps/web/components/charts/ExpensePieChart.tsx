@@ -42,8 +42,8 @@ function renderCustomLabel({
 
 export function ExpensePieChart({ data }: ExpensePieChartProps) {
   return (
-    <div className="h-56 w-full">
-      <ResponsiveContainer>
+    <div className="h-72 w-full">
+      <ResponsiveContainer width="100%" height="100%">
         <PieChart>
           <Pie
             data={data}
@@ -51,8 +51,8 @@ export function ExpensePieChart({ data }: ExpensePieChartProps) {
             nameKey="name"
             cx="50%"
             cy="50%"
-            outerRadius={96}
-            innerRadius={40}
+            outerRadius={140}
+            innerRadius={80}
             labelLine={false}
             label={renderCustomLabel}
           >

@@ -9,7 +9,7 @@ const transactionCategorySchema = z.enum([...new Set([...EXPENSE_CATEGORIES, ...
 ])
 
 export const listTransactionsQuerySchema = paginationQuerySchema.extend({
-  year_month: yearMonthSchema.optional(),
+  year_month: z.union([yearMonthSchema, z.literal('all')]).optional(),
   category: transactionCategorySchema.optional(),
   type: z.enum(TRANSACTION_TYPES).optional(),
   source: z.enum(TRANSACTION_SOURCES).optional(),

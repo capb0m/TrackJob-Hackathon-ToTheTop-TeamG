@@ -2,10 +2,12 @@
 
 import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
-import type { TransactionCategory } from '@lifebalance/shared/types'
+import type { Transaction, TransactionCategory } from '@lifebalance/shared/types'
 
 import { TrendChart } from '@/components/charts/TrendChart'
 import { AddExpenseModal } from '@/components/modals/AddExpenseModal'
+import { AddIncomeModal } from '@/components/modals/AddIncomeModal'
+import { EditTransactionModal } from '@/components/modals/EditTransactionModal'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs } from '@/components/ui/tabs'
@@ -61,6 +63,8 @@ function calculateBudgetAchievementStreak(points: TrendPoint[]) {
 export default function DashboardPage() {
   const [range, setRange] = useState<RangeKey>('1m')
   const [expenseModalOpen, setExpenseModalOpen] = useState(false)
+  const [incomeModalOpen, setIncomeModalOpen] = useState(false)
+  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null)
   const [displayName, setDisplayName] = useState('ユーザー')
 
   const currentYearMonth = getCurrentYearMonth()
@@ -72,7 +76,7 @@ export default function DashboardPage() {
   const { transactions: recentTransactions, isLoading: transactionsLoading } = useTransactions({
     year_month: currentYearMonth,
     page: 1,
-    limit: 5,
+    limit: 4,
     order: 'desc',
     sort: 'transacted_at',
   })
@@ -103,6 +107,7 @@ export default function DashboardPage() {
   const expenseRate = totalExpense / Math.max(1, totalBudget)
   const overAmount = Math.max(totalExpense - totalBudget, 0)
   const ringPercent = Math.min(Math.max(expenseRate, 0), 1) * 100
+  const displayPercent = Math.round(expenseRate * 100)
   const budgetUsageTone =
     expenseRate > 0.8
       ? 'var(--danger)'
@@ -164,12 +169,20 @@ export default function DashboardPage() {
             <span>{guidanceMessage}</span>
           </p>
         </div>
-        <Button
-          className="h-12 bg-[#2fbf8f] px-6 text-base font-bold text-white shadow-[0_10px_20px_rgba(47,191,143,0.24)] hover:bg-[#24b47e]"
-          onClick={() => setExpenseModalOpen(true)}
-        >
-          ＋ 支出を追加
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            className="h-12 bg-[#2fbf8f] px-6 text-base font-bold text-white shadow-[0_10px_20px_rgba(47,191,143,0.24)] hover:bg-[#24b47e]"
+            onClick={() => setIncomeModalOpen(true)}
+          >
+            ＋ 収入を追加
+          </Button>
+          <Button
+            className="h-12 bg-[#2fbf8f] px-6 text-base font-bold text-white shadow-[0_10px_20px_rgba(47,191,143,0.24)] hover:bg-[#24b47e]"
+            onClick={() => setExpenseModalOpen(true)}
+          >
+            ＋ 支出を追加
+          </Button>
+        </div>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -200,7 +213,9 @@ export default function DashboardPage() {
                       }}
                     />
                     <div className="pointer-events-none absolute inset-0 grid place-items-center">
-                      <p className="font-display text-[38px] font-bold text-text">{Math.round(expenseRate * 100)}%</p>
+                      <p className={`font-display font-bold text-text ${displayPercent > 100 ? 'text-[34px]' : 'text-[38px]'}`}>
+                        {displayPercent}%
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -285,9 +300,15 @@ export default function DashboardPage() {
         <Card className="bg-white">
           <CardHeader>
             <CardTitle className="text-[#2fbf8f]">最近の収支記録</CardTitle>
+            <Link
+              href="/expense"
+              className="inline-flex h-9 items-center justify-center rounded-xl bg-card2 px-3 text-xs font-semibold text-[#2fbf8f] transition-all hover:-translate-y-[1px] hover:bg-[#2fbf8f] hover:text-white focus-visible:bg-[#2fbf8f] focus-visible:text-white active:bg-[#2fbf8f] active:text-white"
+            >
+              詳しく確認する
+            </Link>
           </CardHeader>
           <CardContent className="space-y-2">
-            {transactionsLoading ? <p className="text-sm text-text2">取引履歴を読み込み中...</p> : null}
+            {transactionsLoading ? <p className="text-sm text-text2">収支履歴を読み込み中...</p> : null}
             {!transactionsLoading && recentTransactions.length === 0 ? (
               <div className="grid min-h-[190px] place-items-center rounded-xl border border-dashed border-border bg-[#fbfffd] text-sm text-text2">
                 記録はまだありません。
@@ -298,10 +319,11 @@ export default function DashboardPage() {
               const amount = Number.isFinite(rawAmount) ? rawAmount : 0
               const signedAmount = transaction.type === 'expense' ? -Math.abs(amount) : amount
               return (
-                <Link
+                <button
+                  type="button"
                   key={transaction.id}
-                  href="/expense"
-                  className="flex items-center justify-between rounded-xl bg-card2 px-3 py-2 text-sm shadow-[0_8px_16px_rgba(35,55,95,0.08)] transition-transform hover:-translate-y-[1px]"
+                  className="flex w-full items-center justify-between rounded-xl bg-card2 px-3 py-2 text-sm shadow-[0_8px_16px_rgba(35,55,95,0.08)] transition-transform hover:-translate-y-[1px]"
+                  onClick={() => setEditingTransaction(transaction)}
                 >
                   <div>
                     <p className="font-medium text-text">{transaction.description || '（メモなし）'}</p>
@@ -313,7 +335,7 @@ export default function DashboardPage() {
                     {signedAmount < 0 ? '-' : '+'}
                     {formatCurrency(Math.abs(signedAmount))}
                   </p>
-                </Link>
+                </button>
               )
             })}
           </CardContent>
@@ -354,6 +376,16 @@ export default function DashboardPage() {
       </Card>
 
       <AddExpenseModal open={expenseModalOpen} onOpenChange={setExpenseModalOpen} />
+      <AddIncomeModal open={incomeModalOpen} onOpenChange={setIncomeModalOpen} />
+      <EditTransactionModal
+        open={Boolean(editingTransaction)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setEditingTransaction(null)
+          }
+        }}
+        transaction={editingTransaction}
+      />
     </div>
   )
 }
