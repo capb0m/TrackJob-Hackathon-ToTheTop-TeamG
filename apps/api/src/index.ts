@@ -21,6 +21,8 @@ import ocrRoute from './routes/ocr'
 import chatRoute from './routes/chat'
 import lineWebhookRoute from './routes/webhooks/line'
 import { startDiscordGateway } from './services/discord'
+import { sendDailyReminder, sendWeeklySummary } from './services/notifications'
+import { startScheduler } from './lib/scheduler'
 
 const app = new Hono<AppBindings>()
 
@@ -74,6 +76,11 @@ app.onError((error, c) => {
 })
 
 startDiscordGateway().catch(console.error)
+
+startScheduler({
+  onDailyReminder: sendDailyReminder,
+  onWeeklySummary: sendWeeklySummary,
+})
 
 export default {
   port: env.PORT,

@@ -233,6 +233,19 @@ export async function getTotalSpent(userId: string, yearMonth: string) {
   return rows[0]?.total ?? 0
 }
 
+export async function countTodayTransactions(userId: string, todayDate: string): Promise<number> {
+  const rows = await db
+    .select({ total: count() })
+    .from(transactions)
+    .where(
+      and(
+        eq(transactions.userId, userId),
+        eq(transactions.transactedAt, todayDate),
+      ),
+    )
+  return rows[0]?.total ?? 0
+}
+
 export async function getRecordingStreak(userId: string): Promise<number> {
   const rows = await db
     .selectDistinct({ day: transactions.transactedAt })

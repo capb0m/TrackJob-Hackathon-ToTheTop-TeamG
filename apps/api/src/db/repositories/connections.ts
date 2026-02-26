@@ -52,6 +52,18 @@ export function deleteConnection(userId: string, platform: 'line' | 'discord') {
     .returning({ id: externalConnections.id })
 }
 
+export function listAllActiveConnections(platform: 'line' | 'discord') {
+  return db
+    .select()
+    .from(externalConnections)
+    .where(
+      and(
+        eq(externalConnections.platform, platform),
+        eq(externalConnections.isActive, true),
+      ),
+    )
+}
+
 export async function findActiveConnectionByPlatformUserId(
   platform: 'line' | 'discord',
   platformUserId: string,

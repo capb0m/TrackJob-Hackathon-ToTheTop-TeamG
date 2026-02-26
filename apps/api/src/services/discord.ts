@@ -126,6 +126,18 @@ async function handleImageMessage(message: Message, userId: string, attachmentUr
 // Discord Gateway エントリーポイント
 // ─────────────────────────────────────────────
 
+let discordClient: Client | null = null
+
+export async function pushDiscordDM(discordUserId: string, text: string): Promise<void> {
+  if (!discordClient) return
+  try {
+    const user = await discordClient.users.fetch(discordUserId)
+    await user.send(text.slice(0, 2000))
+  } catch (error) {
+    console.error(`[discord] DM送信失敗 ${discordUserId}:`, error)
+  }
+}
+
 export async function startDiscordGateway() {
   if (!env.DISCORD_TOKEN) {
     console.log('[discord] DISCORD_TOKEN が未設定のため Gateway をスキップします')
@@ -178,5 +190,6 @@ export async function startDiscordGateway() {
     }
   })
 
+  discordClient = client
   await client.login(env.DISCORD_TOKEN)
 }

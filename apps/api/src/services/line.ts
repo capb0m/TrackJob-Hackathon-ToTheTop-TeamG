@@ -85,6 +85,29 @@ async function replyLineText(replyToken: string, text: string) {
   })
 }
 
+export async function pushLineText(lineUserId: string, text: string): Promise<void> {
+  if (!env.LINE_CHANNEL_ACCESS_TOKEN) {
+    return
+  }
+
+  const response = await fetch('https://api.line.me/v2/bot/message/push', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${env.LINE_CHANNEL_ACCESS_TOKEN}`,
+    },
+    body: JSON.stringify({
+      to: lineUserId,
+      messages: [{ type: 'text', text: text.slice(0, 4900) }],
+    }),
+  })
+
+  if (!response.ok) {
+    const body = await response.text().catch(() => '')
+    console.error(`[line] push失敗 ${lineUserId}: ${response.status} ${body}`)
+  }
+}
+
 // ─────────────────────────────────────────────
 // LINE 固有: 画像取得・Supabase保存
 // ─────────────────────────────────────────────
