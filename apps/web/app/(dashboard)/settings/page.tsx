@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Dialog, DialogBody, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { useToast } from '@/hooks/useToast'
 import { authProfileApi, connectionsApi } from '@/lib/api'
@@ -21,11 +22,14 @@ export default function SettingsPage() {
   const [discordLoading, setDiscordLoading] = useState(false)
   const [discordConnected, setDiscordConnected] = useState(false)
   const [discordConnectedAt, setDiscordConnectedAt] = useState<string | null>(null)
+  const [showLineHelp, setShowLineHelp] = useState(false)
+  const [showDiscordHelp, setShowDiscordHelp] = useState(false)
   const { toast } = useToast()
   const router = useRouter()
   const searchParams = useSearchParams()
 
   const lineLiffId = process.env.NEXT_PUBLIC_LINE_LIFF_ID
+  const lineBotBasicId = process.env.NEXT_PUBLIC_LINE_BOT_BASIC_ID
   const discordClientId = process.env.NEXT_PUBLIC_DISCORD_CLIENT_ID
 
   const loadSettings = useCallback(async () => {
@@ -248,6 +252,9 @@ export default function SettingsPage() {
             <p className="text-xs text-text2">LINEから支出登録とサマリー確認ができます</p>
           </div>
           <div className="flex items-center gap-2">
+            <Button variant="ghost" onClick={() => setShowLineHelp(true)}>
+              使い方
+            </Button>
             {lineConnected ? (
               <Button variant="ghost" onClick={() => void handleLineDisconnect()} disabled={lineLoading}>
                 {lineLoading ? '解除中...' : '連携解除する'}
@@ -271,6 +278,9 @@ export default function SettingsPage() {
             <p className="text-xs text-text2">DiscordのDMから支出登録とサマリー確認ができます</p>
           </div>
           <div className="flex items-center gap-2">
+            <Button variant="ghost" onClick={() => setShowDiscordHelp(true)}>
+              使い方
+            </Button>
             {discordConnected ? (
               <Button variant="ghost" onClick={() => void handleDiscordDisconnect()} disabled={discordLoading}>
                 {discordLoading ? '解除中...' : '連携解除する'}
@@ -304,6 +314,142 @@ export default function SettingsPage() {
           </button>
         </CardContent>
       </Card>
+
+      {/* LINE 使い方ダイアログ */}
+      <Dialog open={showLineHelp} onOpenChange={setShowLineHelp}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>LINE連携の使い方</DialogTitle>
+            <button
+              type="button"
+              className="text-text2 hover:text-text"
+              onClick={() => setShowLineHelp(false)}
+              aria-label="閉じる"
+            >
+              ✕
+            </button>
+          </DialogHeader>
+          <DialogBody className="space-y-5">
+            {lineBotBasicId ? (
+              <div className="flex flex-col items-center gap-3">
+                <p className="text-sm text-text2">QRコードを読み取って友だち追加</p>
+                <img
+                  src={`https://qr-official.line.me/sid/${lineBotBasicId}/compact.png`}
+                  alt="LINE友だち追加QRコード"
+                  className="h-40 w-40 rounded-xl border border-border bg-white p-2"
+                />
+                <a
+                  href={`https://line.me/ti/p/~${lineBotBasicId}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-sm text-accent underline underline-offset-2"
+                >
+                  友だち追加リンクを開く
+                </a>
+              </div>
+            ) : (
+              <p className="text-center text-sm text-text2">（管理者にQRコードの設定を依頼してください）</p>
+            )}
+            <div className="space-y-3 rounded-xl border border-border bg-card2 px-4 py-3 text-sm">
+              <p className="font-semibold">使い方</p>
+              <ol className="space-y-2 text-text2">
+                <li>① 上のQRコードでLINE公式アカウントを友だち追加</li>
+                <li>② 設定画面の「LINEと連携する」でアカウント連携</li>
+                <li>③ 連携後、LINEのトークで以下を送信</li>
+              </ol>
+              <table className="w-full text-xs">
+                <tbody className="divide-y divide-border">
+                  <tr>
+                    <td className="py-1.5 pr-3 font-mono text-accent">ランチ 850円</td>
+                    <td className="py-1.5 text-text2">支出を登録</td>
+                  </tr>
+                  <tr>
+                    <td className="py-1.5 pr-3 font-mono text-accent">サマリー</td>
+                    <td className="py-1.5 text-text2">今月の支出合計を確認</td>
+                  </tr>
+                  <tr>
+                    <td className="py-1.5 pr-3 font-mono text-accent">ヘルプ</td>
+                    <td className="py-1.5 text-text2">使い方一覧を表示</td>
+                  </tr>
+                  <tr>
+                    <td className="py-1.5 pr-3 font-mono text-accent">レシート画像</td>
+                    <td className="py-1.5 text-text2">OCRで自動登録</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </DialogBody>
+        </DialogContent>
+      </Dialog>
+
+      {/* Discord 使い方ダイアログ */}
+      <Dialog open={showDiscordHelp} onOpenChange={setShowDiscordHelp}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Discord連携の使い方</DialogTitle>
+            <button
+              type="button"
+              className="text-text2 hover:text-text"
+              onClick={() => setShowDiscordHelp(false)}
+              aria-label="閉じる"
+            >
+              ✕
+            </button>
+          </DialogHeader>
+          <DialogBody className="space-y-5">
+            <div className="space-y-3 rounded-xl border border-border bg-card2 px-4 py-3 text-sm">
+              <p className="font-semibold">Botとのトークを始める手順</p>
+              <ol className="space-y-2 text-text2">
+                <li>① 設定画面の「Discordと連携する」でアカウント連携</li>
+                <li>
+                  ② Discord上でBotを検索してDMを開く
+                  {discordClientId && (
+                    <>
+                      （
+                      <a
+                        href={`https://discord.com/users/${discordClientId}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-accent underline underline-offset-2"
+                      >
+                        Botのプロフィールを開く
+                      </a>
+                      ）
+                    </>
+                  )}
+                </li>
+                <li>③ BotにDMを送ると支出を登録できます</li>
+              </ol>
+            </div>
+            <div className="space-y-3 rounded-xl border border-border bg-card2 px-4 py-3 text-sm">
+              <p className="font-semibold">使えるコマンド</p>
+              <table className="w-full text-xs">
+                <tbody className="divide-y divide-border">
+                  <tr>
+                    <td className="py-1.5 pr-3 font-mono text-accent">ランチ 850円</td>
+                    <td className="py-1.5 text-text2">支出を登録</td>
+                  </tr>
+                  <tr>
+                    <td className="py-1.5 pr-3 font-mono text-accent">サマリー</td>
+                    <td className="py-1.5 text-text2">今月の支出合計を確認</td>
+                  </tr>
+                  <tr>
+                    <td className="py-1.5 pr-3 font-mono text-accent">ヘルプ</td>
+                    <td className="py-1.5 text-text2">使い方一覧を表示</td>
+                  </tr>
+                  <tr>
+                    <td className="py-1.5 pr-3 font-mono text-accent">レシート画像</td>
+                    <td className="py-1.5 text-text2">OCRで自動登録</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <p className="text-xs text-text2">
+              ※ BotへのDMが届かない場合は、DiscordのプライバシーとセキュリティでサーバーメンバーからのDMを許可してください。
+            </p>
+          </DialogBody>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
