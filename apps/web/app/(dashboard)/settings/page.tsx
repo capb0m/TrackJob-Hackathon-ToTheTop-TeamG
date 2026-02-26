@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -249,7 +248,6 @@ export default function SettingsPage() {
             <p className="text-xs text-text2">LINEから支出登録とサマリー確認ができます</p>
           </div>
           <div className="flex items-center gap-2">
-            <Badge variant={lineConnected ? 'success' : 'warning'}>{lineConnected ? 'Connected' : 'Disconnected'}</Badge>
             {lineConnected ? (
               <Button variant="ghost" onClick={() => void handleLineDisconnect()} disabled={lineLoading}>
                 {lineLoading ? '解除中...' : '連携解除する'}
@@ -273,7 +271,6 @@ export default function SettingsPage() {
             <p className="text-xs text-text2">DiscordのDMから支出登録とサマリー確認ができます</p>
           </div>
           <div className="flex items-center gap-2">
-            <Badge variant={discordConnected ? 'success' : 'warning'}>{discordConnected ? 'Connected' : 'Disconnected'}</Badge>
             {discordConnected ? (
               <Button variant="ghost" onClick={() => void handleDiscordDisconnect()} disabled={discordLoading}>
                 {discordLoading ? '解除中...' : '連携解除する'}
