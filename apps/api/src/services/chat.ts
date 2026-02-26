@@ -63,10 +63,12 @@ function extractConfigTag(content: string) {
 /**
  * Normalizes AI-generated config values before schema validation.
  * Rounds all amounts to integers since Gemini may return floats.
+ * Clamps target_year to the current year if the AI returns a past year.
  */
 function normalizeConfigData(raw: unknown): unknown {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return raw
   const obj = { ...(raw as Record<string, unknown>) }
+  const currentYear = new Date().getUTCFullYear()
 
   if (typeof obj.monthly_income === 'number') {
     obj.monthly_income = Math.round(obj.monthly_income)
@@ -81,7 +83,8 @@ function normalizeConfigData(raw: unknown): unknown {
       const g = { ...(goal as Record<string, unknown>) }
       if (typeof g.target_amount === 'number') g.target_amount = Math.round(g.target_amount)
       if (typeof g.monthly_saving === 'number') g.monthly_saving = Math.round(g.monthly_saving)
-      if (typeof g.target_year === 'number') g.target_year = Math.round(g.target_year)
+      // Clamp to currentYear: AI sometimes miscalculates (e.g. returns 2025 when it should be ≥2026)
+      if (typeof g.target_year === 'number') g.target_year = Math.max(Math.round(g.target_year), currentYear)
       return g
     })
   }
@@ -124,6 +127,9 @@ async function extractConfigFromHistory(messages: ChatMessage[]) {
     .join('\n')
 
   const prompt = `
+## 現在の日付
+今日は${currentYear}年です。「N年後」はこの年を基準に計算してください（例：1年後=${currentYear + 1}年）。
+
 以下の会話から家計設定情報を抽出し、JSONのみを返してください（説明文は不要）。
 
 --- 会話 ---
@@ -140,7 +146,7 @@ ${conversationText}
       "icon": "<絵文字1文字>",
       "target_amount": <目標金額（整数・円）>,
       "monthly_saving": <月々の積立額（整数・円）>,
-      "target_year": <目標年（${currentYear}以降の整数）>,
+      "target_year": <目標年（${currentYear}以降の整数・「N年後」は${currentYear}+Nで計算）>,
       "priority": "高"
     }
   ],

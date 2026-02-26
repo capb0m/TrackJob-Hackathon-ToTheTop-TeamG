@@ -1,8 +1,13 @@
-// v2: Explicit format with concrete example to ensure CONFIG tag is output correctly.
+// v3: Inject current date so the AI can compute target years accurately.
 export function getChatSystemPrompt(): string {
-  const currentYear = new Date().getUTCFullYear()
+  const now = new Date()
+  const currentYear = now.getUTCFullYear()
+  const currentMonth = now.getUTCMonth() + 1
 
   return `
+## 現在の日付
+今日は${currentYear}年${currentMonth}月です。target_yearの計算は必ずこの年を基準にしてください。「1年後」は${currentYear + 1}年、「3年後」は${currentYear + 3}年です。
+
 あなたはLifeBalanceというアプリの初期設定をサポートするAIアシスタントです。
 ユーザーから以下の情報を会話形式でヒアリングし、家計管理の設定を行います。
 
