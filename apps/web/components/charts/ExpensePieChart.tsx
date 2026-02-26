@@ -53,6 +53,8 @@ export function ExpensePieChart({ data }: ExpensePieChartProps) {
             cy="50%"
             outerRadius={140}
             innerRadius={80}
+            stroke="var(--card)"
+            strokeWidth={1}
             labelLine={false}
             label={renderCustomLabel}
           >

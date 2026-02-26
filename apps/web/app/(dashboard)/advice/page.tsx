@@ -4,6 +4,11 @@ import { ScoreHistoryChart } from '@/components/charts/ScoreHistoryChart'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useAdvice } from '@/hooks/useAdvice'
+import type { AdviceItem } from '@lifebalance/shared/types'
+
+type DisplayAdviceItem = AdviceItem & {
+  urgent?: boolean
+}
 
 export default function AdvicePage() {
   const { advice, history, loading, refreshing, error, refresh } = useAdvice()
@@ -29,66 +34,121 @@ export default function AdvicePage() {
     )
   }
 
+  const improvementItems: DisplayAdviceItem[] = [
+    ...advice.content.urgent.map((item) => ({
+      ...item,
+      urgent: true,
+    })),
+    ...advice.content.suggestions,
+  ]
+
   return (
-    <div className="space-y-5">
-      <div className="flex items-center justify-between">
+    <div className="space-y-5 pb-20 md:pb-28">
+      <div className="flex flex-col items-start justify-between gap-3 md:flex-row md:items-center">
         <div>
           <h1 className="font-display text-[30px] font-bold leading-tight tracking-[-0.02em] text-text">KakeAI</h1>
           <p className="text-sm text-text2">緊急度と改善効果に応じた家計アクションを確認できます</p>
         </div>
-        <Button className="text-text" onClick={() => void refresh()} disabled={refreshing}>
+        <Button variant="ghost" className="h-11 px-5 text-sm font-semibold" onClick={() => void refresh()} disabled={refreshing}>
           {refreshing ? '更新中...' : 'KakeAIを更新'}
         </Button>
       </div>
 
       {error ? <p className="text-sm text-danger">{error}</p> : null}
 
-      <Card className="bg-card">
-        <CardContent className="grid gap-4 py-6 md:grid-cols-2">
-          <div className="rounded-xl border border-accent/30 bg-accent/10 p-4">
-            <p className="text-xs text-text2">家計スコア</p>
-            <p className="font-display text-5xl font-bold text-accent">{advice.score}</p>
-            <p className="text-xs text-text2">100点満点</p>
+      <div className="grid gap-4 xl:items-start xl:grid-cols-[minmax(0,1.7fr)_minmax(320px,1fr)]">
+        <div className="space-y-4">
+          <Card className="bg-card">
+            <CardContent className="grid gap-4 p-0 lg:grid-cols-[240px_minmax(0,1fr)]">
+              <div className="rounded-xl border border-border bg-bg2 p-4">
+                <div className="rounded-xl border border-border bg-card p-4 text-center">
+                  <p className="text-xs text-text2">家計スコア</p>
+                  <p className="font-display text-5xl font-bold text-accent">{advice.score}</p>
+                  <p className="text-xs text-text2">100点満点</p>
+                </div>
+
+                <div className="mt-4 space-y-2">
+                  <p className="text-sm font-semibold text-text">来月の目標</p>
+                  {advice.content.next_month_goals.length > 0 ? (
+                    <ul className="space-y-1 pl-4 text-xs text-text2">
+                      {advice.content.next_month_goals.map((goal) => (
+                        <li key={goal} className="list-disc">
+                          {goal}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-xs text-text2">来月の目標はまだありません。</p>
+                  )}
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-border bg-bg2 p-3">
+                {history.length > 0 ? (
+                  <ScoreHistoryChart data={history} />
+                ) : (
+                  <div className="flex h-56 items-center justify-center text-sm text-text2">スコア履歴がまだありません</div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <AdviceSection title="改善提案" items={improvementItems} />
+            <AdviceSection title="継続中の良い点" items={advice.content.positives} />
           </div>
-          <ScoreHistoryChart data={history} />
-        </CardContent>
-      </Card>
-
-      <div className="grid gap-4 lg:grid-cols-3">
-        <AdviceSection title="緊急アクション" items={advice.content.urgent} tone="border-danger/25 bg-danger/10" />
-        <AdviceSection title="改善提案" items={advice.content.suggestions} tone="border-warn/35 bg-warn/20" />
-        <AdviceSection title="継続中の良い点" items={advice.content.positives} tone="border-accent/30 bg-accent/10" />
+        </div>
+        <QuestionPanel />
       </div>
-
-      <Card className="bg-card">
-        <CardHeader>
-          <CardTitle className="text-accent">来月の目標</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ul className="list-disc space-y-2 pl-5 text-sm text-text2">
-            {advice.content.next_month_goals.map((goal) => (
-              <li key={goal}>{goal}</li>
-            ))}
-          </ul>
-        </CardContent>
-      </Card>
     </div>
   )
 }
 
-function AdviceSection({ title, items, tone }: { title: string; items: Array<{ title: string; body: string }>; tone: string }) {
+function AdviceSection({ title, items }: { title: string; items: DisplayAdviceItem[] }) {
   return (
     <Card className="bg-card">
       <CardHeader>
         <CardTitle className="text-accent">{title}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
+        {items.length === 0 ? <p className="text-sm text-text2">表示できる項目はありません。</p> : null}
         {items.map((item) => (
-          <article key={item.title} className={`rounded-lg border p-3 ${tone}`}>
-            <h3 className="text-sm font-semibold">{item.title}</h3>
+          <article
+            key={`${item.title}-${item.body}`}
+            className={`rounded-lg border p-3 ${
+              item.urgent ? 'border-danger/30 bg-danger/10' : 'border-border bg-bg2'
+            }`}
+          >
+            <div className="flex items-center justify-between gap-2">
+              <h3 className="text-sm font-semibold text-text">{item.title}</h3>
+              {item.urgent ? (
+                <span className="rounded-full border border-danger/40 bg-danger/20 px-2 py-0.5 text-[10px] font-bold text-danger">
+                  緊急
+                </span>
+              ) : null}
+            </div>
             <p className="mt-1 text-xs text-text2">{item.body}</p>
           </article>
         ))}
+      </CardContent>
+    </Card>
+  )
+}
+
+function QuestionPanel() {
+  return (
+    <Card className="bg-card xl:self-start">
+      <CardHeader>
+        <CardTitle className="text-base text-accent">🤖 KakeAIに質問する</CardTitle>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-4">
+        <div className="min-h-[180px] rounded-xl border border-border bg-bg2 p-4">
+          <div className="flex items-start gap-3 rounded-xl border border-border bg-card p-3">
+            <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-accent/20 text-sm">🤖</div>
+            <p className="text-sm text-text">家計・節約・投資について何でも質問してください！</p>
+          </div>
+        </div>
+        <div className="rounded-xl border border-border bg-bg2 px-4 py-3 text-sm text-text2">質問を入力してください</div>
       </CardContent>
     </Card>
   )
