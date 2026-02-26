@@ -73,10 +73,41 @@ export default function SettingsPage() {
     return `Discord連携済み（${new Date(discordConnectedAt).toLocaleString('ja-JP')}）`
   }, [discordConnected, discordConnectedAt])
 
+  // LINE LIFF コールバック処理（liff.login() によるリダイレクト後に連携を完了させる）
+  useEffect(() => {
+    const lineConnect = searchParams.get('line_connect')
+    if (!lineConnect || !lineLiffId) return
+
+    setLineLoading(true)
+    ;(async () => {
+      try {
+        const liffModule = await import('@line/liff')
+        const liff = liffModule.default
+        await liff.init({ liffId: lineLiffId })
+        if (liff.isLoggedIn()) {
+          const profile = await liff.getProfile()
+          await connectionsApi.connectLine(profile.userId)
+          await loadSettings()
+          toast({ title: 'LINE連携が完了しました', variant: 'success' })
+        }
+      } catch (error) {
+        toast({
+          title: error instanceof Error ? error.message : 'LINE連携に失敗しました',
+          variant: 'error',
+        })
+      } finally {
+        setLineLoading(false)
+        router.replace('/settings')
+      }
+    })()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   // Discord OAuth2 コールバック処理
   useEffect(() => {
     const code = searchParams.get('code')
-    if (!code) return
+    const state = searchParams.get('state')
+    if (!code || state !== 'discord') return
 
     const redirectUri = `${window.location.origin}/settings`
     setDiscordLoading(true)
@@ -132,7 +163,9 @@ export default function SettingsPage() {
       await liff.init({ liffId: lineLiffId })
 
       if (!liff.isLoggedIn()) {
-        liff.login({ redirectUri: window.location.href })
+        const redirectUrl = new URL(window.location.href)
+        redirectUrl.searchParams.set('line_connect', '1')
+        liff.login({ redirectUri: redirectUrl.toString() })
         return
       }
 
@@ -179,7 +212,7 @@ export default function SettingsPage() {
     }
     const redirectUri = encodeURIComponent(`${window.location.origin}/settings`)
     const scopes = encodeURIComponent('identify')
-    window.location.href = `https://discord.com/oauth2/authorize?client_id=${discordClientId}&response_type=code&redirect_uri=${redirectUri}&scope=${scopes}`
+    window.location.href = `https://discord.com/oauth2/authorize?client_id=${discordClientId}&response_type=code&redirect_uri=${redirectUri}&scope=${scopes}&state=discord`
   }
 
   async function handleDiscordDisconnect() {
