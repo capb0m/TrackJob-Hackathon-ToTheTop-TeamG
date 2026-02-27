@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import type { ChatSetupContext } from '@lifebalance/shared/types'
 
@@ -136,6 +136,20 @@ function buildSetupContext(answers: SetupAnswers): ChatSetupContext {
 }
 
 export default function SetupPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center">
+          <p className="text-sm text-text2">読み込み中...</p>
+        </div>
+      }
+    >
+      <SetupPageInner />
+    </Suspense>
+  )
+}
+
+function SetupPageInner() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { toast } = useToast()
