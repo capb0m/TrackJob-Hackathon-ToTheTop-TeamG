@@ -17,7 +17,7 @@ export default function BudgetPage() {
   const patchBudget = usePatchBudget(yearMonth)
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-5 pb-20 md:pb-28">
       <div className="flex flex-col items-start justify-between gap-3 md:flex-row md:items-center">
         <div>
           <h1 className="font-display text-[30px] font-bold leading-tight tracking-[-0.02em] text-text">予算設定</h1>

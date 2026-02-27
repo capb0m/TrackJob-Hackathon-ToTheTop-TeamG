@@ -13,7 +13,7 @@ const navItems = [
   { href: '/dashboard', label: 'ダッシュボード', icon: '📊' },
   { href: '/expense', label: '収支管理', icon: '💳' },
   { href: '/budget', label: '予算設定', icon: '🎯' },
-  { href: '/future', label: 'ライフプラン', icon: '🔮' },
+  { href: '/future', label: '資産とライフプラン', icon: '🔮' },
   { href: '/advice', label: 'KakeAI', icon: '💡' },
 ] as const
 

@@ -257,7 +257,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <p className="font-display text-6xl font-bold text-text">{streakDays}日</p>
-            <p className="mt-3 text-xs text-text2">毎日の記録を継続中！</p>
+            <p className="mt-3 text-xs text-text2">{streakDays === 0 ? '今日の支出を記録しましょう' : '毎日の記録を継続中！'}</p>
           </CardContent>
         </Card>
 
@@ -267,7 +267,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <p className="font-display text-6xl font-bold text-text">{budgetAchievementStreak}ヶ月</p>
-            <p className="mt-3 text-xs text-text2">予算内支出を連続達成した期間</p>
+            <p className="mt-3 text-xs text-text2">予算内の支出を連続で達成した期間</p>
           </CardContent>
         </Card>
       </div>
@@ -386,9 +386,7 @@ export default function DashboardPage() {
               className="block rounded-xl bg-card2 p-3 shadow-[0_8px_16px_rgba(35,55,95,0.08)] transition-all hover:-translate-y-[1px] hover:bg-accent/10"
             >
               <div className="flex items-center justify-between">
-                <p className="text-sm font-semibold text-text">
-                  {goal.icon} {goal.title}
-                </p>
+                <p className="text-sm font-semibold text-text">{goal.title}</p>
                 <p className="text-xs text-text2">{goal.target_year}年</p>
               </div>
               <div className="mt-2 h-2 rounded-full bg-[var(--track-muted)]">

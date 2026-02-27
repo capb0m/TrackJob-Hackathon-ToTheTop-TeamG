@@ -12,6 +12,25 @@ export function formatCurrency(value: number) {
   }).format(value)
 }
 
+export function formatNumberInput(value: number | undefined) {
+  if (value === undefined || Number.isNaN(value)) {
+    return ''
+  }
+
+  return new Intl.NumberFormat('ja-JP', {
+    maximumFractionDigits: 0,
+  }).format(value)
+}
+
+export function parseNumberInput(raw: string) {
+  const normalized = raw.replace(/[^\d]/g, '')
+  if (!normalized) {
+    return undefined
+  }
+
+  return Number(normalized)
+}
+
 export function formatPercent(value: number) {
   return `${(value * 100).toFixed(1)}%`
 }

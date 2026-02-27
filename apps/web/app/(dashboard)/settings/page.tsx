@@ -8,11 +8,20 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Dialog, DialogBody, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { useToast } from '@/hooks/useToast'
-import { authProfileApi, connectionsApi } from '@/lib/api'
+import { assumptionsApi, authProfileApi, connectionsApi } from '@/lib/api'
+
+type AssumptionsDraft = {
+  age: number
+  annual_income_growth: number
+  investment_return: number
+  inflation_rate: number
+  monthly_investment: number
+  simulation_trials: 100 | 500 | 1000
+}
 
 export default function SettingsPage() {
   const [displayName, setDisplayName] = useState('')
-  const [monthlyIncome, setMonthlyIncome] = useState<number>(0)
+  const [assumptionsDraft, setAssumptionsDraft] = useState<AssumptionsDraft | null>(null)
   const [notificationEnabled, setNotificationEnabled] = useState(true)
   const [loading, setLoading] = useState(true)
   const [savingProfile, setSavingProfile] = useState(false)
@@ -35,13 +44,21 @@ export default function SettingsPage() {
   const loadSettings = useCallback(async () => {
     setLoading(true)
     try {
-      const [profile, connections] = await Promise.all([
+      const [profile, connections, assumptions] = await Promise.all([
         authProfileApi.get(),
         connectionsApi.list(),
+        assumptionsApi.get(),
       ])
 
       setDisplayName(profile.display_name)
-      setMonthlyIncome(profile.monthly_income)
+      setAssumptionsDraft({
+        age: assumptions.age,
+        annual_income_growth: assumptions.annual_income_growth,
+        investment_return: assumptions.investment_return,
+        inflation_rate: assumptions.inflation_rate,
+        monthly_investment: assumptions.monthly_investment,
+        simulation_trials: assumptions.simulation_trials,
+      })
 
       const lineConnection = connections.find((connection) => connection.platform === 'line' && connection.is_active)
       setLineConnected(Boolean(lineConnection))
@@ -132,12 +149,22 @@ export default function SettingsPage() {
   }, [])
 
   async function handleProfileSave() {
+    if (!assumptionsDraft) {
+      toast({
+        title: '前提条件の取得に失敗したため、保存できません。',
+        variant: 'error',
+      })
+      return
+    }
+
     try {
       setSavingProfile(true)
-      await authProfileApi.update({
-        display_name: displayName,
-        monthly_income: monthlyIncome,
-      })
+      await Promise.all([
+        authProfileApi.update({
+          display_name: displayName,
+        }),
+        assumptionsApi.update(assumptionsDraft),
+      ])
       toast({ title: 'プロフィールを保存しました', variant: 'success' })
     } catch (error) {
       toast({
@@ -260,18 +287,29 @@ export default function SettingsPage() {
             <Input value={displayName} onChange={(event) => setDisplayName(event.target.value)} />
           </div>
           <div>
-            <label className="text-xs text-text2">月収</label>
+            <label className="text-xs text-text2">年齢</label>
             <Input
               type="number"
-              value={monthlyIncome}
-              onChange={(event) => setMonthlyIncome(Number(event.target.value))}
+              min={18}
+              max={100}
+              value={assumptionsDraft?.age ?? 30}
+              onChange={(event) =>
+                setAssumptionsDraft((prev) =>
+                  prev
+                    ? {
+                        ...prev,
+                        age: Number(event.target.value),
+                      }
+                    : prev,
+                )
+              }
             />
           </div>
           <div className="md:col-span-2">
             <Button
               className="bg-[var(--cta-bg)] text-[var(--cta-text)] hover:bg-[var(--cta-hover)]"
               onClick={() => void handleProfileSave()}
-              disabled={savingProfile}
+              disabled={savingProfile || !assumptionsDraft}
             >
               {savingProfile ? '保存中...' : '保存する'}
             </Button>

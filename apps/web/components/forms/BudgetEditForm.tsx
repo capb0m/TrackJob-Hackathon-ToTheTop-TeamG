@@ -113,7 +113,7 @@ export function BudgetEditForm({
                   <Button
                     size="sm"
                     variant="ghost"
-                    className="hover:bg-[var(--cta-bg)] hover:text-white"
+                    className="hover:!bg-[var(--cta-bg)] hover:!text-white"
                     onClick={async () => {
                       if (!isEditing) {
                         setAmountInputs((prev) => ({
@@ -142,7 +142,7 @@ export function BudgetEditForm({
                   <Button
                     size="sm"
                     variant="ghost"
-                    className="hover:bg-[var(--cta-bg)] hover:text-white"
+                    className="hover:!bg-[var(--cta-bg)] hover:!text-white"
                     onClick={() =>
                       setValues((prev) => ({
                         ...prev,

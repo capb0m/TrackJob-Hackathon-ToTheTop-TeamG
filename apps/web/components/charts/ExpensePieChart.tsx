@@ -69,7 +69,10 @@ export function ExpensePieChart({ data }: ExpensePieChartProps) {
               border: '1px solid var(--border)',
               borderRadius: 12,
               boxShadow: 'var(--chart-tooltip-shadow)',
+              color: 'var(--chart-tooltip-text)',
             }}
+            labelStyle={{ color: 'var(--chart-tooltip-text)' }}
+            itemStyle={{ color: 'var(--chart-tooltip-text)' }}
           />
         </PieChart>
       </ResponsiveContainer>

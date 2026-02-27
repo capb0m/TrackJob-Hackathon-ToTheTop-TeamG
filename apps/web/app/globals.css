@@ -19,6 +19,7 @@
   --track-muted: rgba(47, 74, 122, 0.12);
   --chart-grid: rgba(47, 74, 122, 0.12);
   --chart-tooltip-shadow: 0 10px 24px rgba(35, 55, 95, 0.08);
+  --chart-tooltip-text: var(--text);
   --pie-1: #2fbf8f;
   --pie-2: #6c8fff;
   --pie-3: #ff7eb3;
@@ -65,6 +66,7 @@
   --track-muted: rgba(255, 255, 255, 0.11);
   --chart-grid: rgba(255, 255, 255, 0.08);
   --chart-tooltip-shadow: 0 10px 24px rgba(5, 8, 18, 0.45);
+  --chart-tooltip-text: #ffffff;
   --pie-1: #30b985;
   --pie-2: #4f6cc4;
   --pie-3: #c45e8c;

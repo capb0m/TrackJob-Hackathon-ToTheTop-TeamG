@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
+import { useRouter } from 'next/navigation'
 
 import type { Transaction, TransactionCategory } from '@lifebalance/shared/types'
 
@@ -49,6 +50,7 @@ const PIE_COLORS = [
 const HEADER_ACTION_BUTTON_CLASS =
   'h-12 bg-[var(--cta-bg)] px-6 text-base font-bold text-[var(--cta-text)] shadow-[var(--cta-shadow)] hover:bg-[var(--cta-hover)]'
 const SECONDARY_ACTION_BUTTON_CLASS = 'h-12 px-6 text-base font-bold'
+const CTA_HOVER_GHOST_BUTTON_CLASS = 'hover:!border-[var(--cta-bg)] hover:!bg-[var(--cta-bg)] hover:!text-white'
 
 function toCsvCell(value: string | number) {
   const raw = String(value ?? '')
@@ -69,6 +71,7 @@ function getRecentMonths(count: number) {
 }
 
 export default function ExpensePage() {
+  const router = useRouter()
   const [openAddModal, setOpenAddModal] = useState(false)
   const [openIncomeModal, setOpenIncomeModal] = useState(false)
   const [openExportModal, setOpenExportModal] = useState(false)
@@ -230,6 +233,14 @@ export default function ExpensePage() {
         <Card className="bg-card">
           <CardHeader>
             <CardTitle className="text-accent">カテゴリ別支出（{month}）</CardTitle>
+            <Button
+              variant="ghost"
+              size="sm"
+              className={`px-4 text-xs font-semibold ${CTA_HOVER_GHOST_BUTTON_CLASS}`}
+              onClick={() => router.push('/budget')}
+            >
+              予算を変更する
+            </Button>
           </CardHeader>
           <CardContent className="space-y-2">
             {budgetsLoading ? <p className="text-sm text-text2">予算データを読み込み中...</p> : null}
@@ -389,7 +400,7 @@ export default function ExpensePage() {
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-8 px-3 text-xs font-semibold"
+                className={`h-8 px-3 text-xs font-semibold ${CTA_HOVER_GHOST_BUTTON_CLASS}`}
                 onClick={() => {
                   setEditingTransaction(transaction)
                 }}
