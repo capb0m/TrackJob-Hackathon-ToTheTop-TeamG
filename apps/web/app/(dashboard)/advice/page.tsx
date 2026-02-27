@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { ScoreHistoryChart } from '@/components/charts/ScoreHistoryChart'
 import { Button } from '@/components/ui/button'
@@ -16,16 +16,107 @@ type DisplayAdviceItem = AdviceItem & {
 }
 
 type AdviceDetailModalContent = {
+  detailKey: string
   sectionTitle: string
   title: string
   summary: string
   proposalItems: string[]
   urgent?: boolean
+  isGenerating: boolean
+  generationError: string | null
 }
+
+const IMPROVEMENT_DETAIL_FALLBACK_ITEMS = [
+  '直近14日間の同カテゴリ支出を確認し、固定費・変動費に分けて改善対象を明確化する',
+  '金額インパクトが大きい項目から優先順位を付け、今月中に1件見直す',
+  '週の中間時点で実績を確認し、必要なら予算配分を微調整する',
+]
+
+const POSITIVE_DETAIL_FALLBACK_ITEMS = [
+  '現在の良い行動を再現できる形に整理し、来月のルールとして固定化する',
+  '達成理由を金額や頻度で言語化し、再現しやすい条件を残す',
+  '来月も続ける条件を1つ決め、設定に反映して習慣化する',
+]
 
 export default function AdvicePage() {
   const { advice, history, loading, refreshing, error, refresh } = useAdvice()
   const [selectedAdvice, setSelectedAdvice] = useState<AdviceDetailModalContent | null>(null)
+  const [adviceDetailCache, setAdviceDetailCache] = useState<Record<string, string[]>>({})
+  const detailRequestIdRef = useRef(0)
+
+  const handleSelectImprovementAdvice = useCallback(
+    async (item: DisplayAdviceItem) => {
+      const detailKey = buildAdviceDetailKey(item, '改善提案')
+      const baseDetail = buildAdviceDetailModalContent(item, '改善提案')
+      const cachedProposalItems = adviceDetailCache[detailKey]
+
+      if (cachedProposalItems) {
+        setSelectedAdvice({
+          ...baseDetail,
+          proposalItems: cachedProposalItems,
+          isGenerating: false,
+          generationError: null,
+        })
+        return
+      }
+
+      const requestId = detailRequestIdRef.current + 1
+      detailRequestIdRef.current = requestId
+
+      setSelectedAdvice({
+        ...baseDetail,
+        isGenerating: true,
+        generationError: null,
+      })
+
+      try {
+        const response = await adviceApi.detail({
+          section: 'improvement',
+          title: item.title,
+          summary: item.body,
+          urgent: item.urgent,
+        })
+
+        if (detailRequestIdRef.current !== requestId) {
+          return
+        }
+
+        const proposalItems = normalizeProposalItems(response.proposal_items, IMPROVEMENT_DETAIL_FALLBACK_ITEMS)
+        setAdviceDetailCache((prev) => ({
+          ...prev,
+          [detailKey]: proposalItems,
+        }))
+
+        setSelectedAdvice((prev) => {
+          if (!prev || prev.detailKey !== detailKey) {
+            return prev
+          }
+          return {
+            ...prev,
+            proposalItems,
+            isGenerating: false,
+            generationError: null,
+          }
+        })
+      } catch (requestError) {
+        if (detailRequestIdRef.current !== requestId) {
+          return
+        }
+
+        setSelectedAdvice((prev) => {
+          if (!prev || prev.detailKey !== detailKey) {
+            return prev
+          }
+          return {
+            ...prev,
+            isGenerating: false,
+            generationError: requestError instanceof Error ? requestError.message : '提案の生成に失敗しました。',
+          }
+        })
+      }
+    },
+    [adviceDetailCache],
+  )
 
   if (loading) {
     return (
@@ -133,7 +224,9 @@ export default function AdvicePage() {
           <AdviceSection
             title="改善提案"
             items={improvementItems}
-            onSelectItem={(item) => setSelectedAdvice(buildAdviceDetailModalContent(item, '改善提案'))}
+            onSelectItem={(item) => {
+              void handleSelectImprovementAdvice(item)
+            }}
           />
           <AdviceSection title="継続中の良い点" items={advice.content.positives} />
         </div>
@@ -247,6 +340,8 @@ function AdviceDetailDialog({
               <h3 className={detail.sectionTitle === '改善提案' ? 'text-lg font-semibold text-text md:text-xl' : 'text-base font-semibold text-text'}>
                 具体的な提案
               </h3>
+              {detail.isGenerating ? <p className="text-sm text-text2">KakeAIが具体案を生成中です...</p> : null}
+              {detail.generationError ? <p className="text-xs text-danger">{detail.generationError}</p> : null}
               <ul className={detail.sectionTitle === '改善提案' ? 'space-y-2 pl-5 text-base text-text2 md:text-lg' : 'space-y-2 pl-5 text-sm text-text2'}>
                 {detail.proposalItems.map((proposal) => (
                   <li key={proposal} className="list-disc">
@@ -262,31 +357,30 @@ function AdviceDetailDialog({
   )
 }
 
-function buildAdviceDetailModalContent(item: DisplayAdviceItem, sectionTitle: string): AdviceDetailModalContent {
-  if (sectionTitle === '改善提案') {
-    return {
-      sectionTitle,
-      title: item.title,
-      summary: item.body,
-      proposalItems: [
-        '直近14日間の同カテゴリ支出を確認し、固定費・変動費に分けて改善対象を明確化する',
-        '金額インパクトが大きい項目から優先順位を付け、今月中に1件見直す',
-        '週の中間時点で実績を確認し、必要なら予算配分を微調整する',
-      ],
-      urgent: item.urgent,
-    }
+function buildAdviceDetailKey(item: DisplayAdviceItem, sectionTitle: string) {
+  return `${sectionTitle}:${item.title}:${item.body}:${item.urgent ? '1' : '0'}`
+}
+
+function normalizeProposalItems(items: string[], fallbackItems: string[]) {
+  const normalizedItems = [...new Set(items.map((item) => item.trim()).filter(Boolean))]
+  if (normalizedItems.length === 0) {
+    return fallbackItems
   }
+  return normalizedItems
+}
+
+function buildAdviceDetailModalContent(item: DisplayAdviceItem, sectionTitle: string): AdviceDetailModalContent {
+  const detailKey = buildAdviceDetailKey(item, sectionTitle)
 
   return {
+    detailKey,
     sectionTitle,
     title: item.title,
     summary: item.body,
-    proposalItems: [
-      '現在の良い行動を再現できる形に整理し、来月のルールとして固定化する',
-      '達成理由を金額や頻度で言語化し、再現しやすい条件を残す',
-      '来月も続ける条件を1つ決め、設定に反映して習慣化する',
-    ],
+    proposalItems: sectionTitle === '改善提案' ? IMPROVEMENT_DETAIL_FALLBACK_ITEMS : POSITIVE_DETAIL_FALLBACK_ITEMS,
     urgent: item.urgent,
+    isGenerating: false,
+    generationError: null,
   }
 }
 

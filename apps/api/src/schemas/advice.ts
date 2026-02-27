@@ -18,3 +18,10 @@ export const adviceHistoryQuerySchema = z.object({
 export const adviceQuestionBodySchema = z.object({
   question: z.string().min(1).max(500),
 })
+
+export const adviceDetailBodySchema = z.object({
+  section: z.enum(['improvement', 'positive']).default('improvement'),
+  title: z.string().min(1).max(120),
+  summary: z.string().min(1).max(500),
+  urgent: z.boolean().optional(),
+})

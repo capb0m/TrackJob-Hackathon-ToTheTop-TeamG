@@ -37,6 +37,25 @@ export const ADVICE_SYSTEM_PROMPT = `
 - next_month_goals: 2〜3件
 `.trim()
 
+export const ADVICE_DETAIL_SYSTEM_PROMPT = `
+あなたは日本人向けの家計管理コーチです。
+提示された「改善提案」を、今すぐ実行できる具体的な行動に分解してください。
+
+## 回答ルール
+- 出力は必ずJSONのみ
+- 具体的な行動を2〜4件で提示する
+- 1項目は40〜80文字程度
+- 抽象表現ではなく、行動・頻度・目安金額を可能な限り入れる
+
+## 出力形式
+{
+  "proposal_items": [
+    "具体的な行動1",
+    "具体的な行動2"
+  ]
+}
+`.trim()
+
 function formatCurrency(value: number) {
   return `¥${value.toLocaleString('ja-JP')}`
 }
@@ -113,5 +132,28 @@ ${buildGoalsSummary(params.goals)}
 
 ## 前月のアドバイスに対する結果
 ${buildPreviousAdviceSummary(params.previousAdvice)}
+`.trim()
+}
+
+export function buildAdviceDetailUserPrompt(params: {
+  section: 'improvement' | 'positive'
+  title: string
+  summary: string
+  urgent?: boolean
+}) {
+  return `
+## 対象セクション
+- ${params.section === 'improvement' ? '改善提案' : '継続中の良い点'}
+
+## 提案タイトル
+- ${params.title}
+
+## 提案サマリー
+- ${params.summary}
+
+## 緊急フラグ
+- ${params.urgent ? '緊急' : '通常'}
+
+上記をもとに、実行しやすい具体アクションを返してください。
 `.trim()
 }

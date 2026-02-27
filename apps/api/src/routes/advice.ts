@@ -3,8 +3,20 @@ import { Hono } from 'hono'
 import { parseJsonBody, parseOptionalJsonBody, parseQuery } from '../lib/request'
 import { success } from '../lib/response'
 import type { AppBindings } from '../types'
-import { adviceHistoryQuerySchema, adviceQuestionBodySchema, generateAdviceBodySchema, getAdviceQuerySchema } from '../schemas/advice'
-import { answerAdviceQuestion, findAdviceCache, generateAdvice, getAdviceHistory } from '../services/advice'
+import {
+  adviceDetailBodySchema,
+  adviceHistoryQuerySchema,
+  adviceQuestionBodySchema,
+  generateAdviceBodySchema,
+  getAdviceQuerySchema,
+} from '../schemas/advice'
+import {
+  answerAdviceQuestion,
+  findAdviceCache,
+  generateAdvice,
+  generateAdviceDetail,
+  getAdviceHistory,
+} from '../services/advice'
 import { AppError } from '../lib/errors'
 
 const adviceRoute = new Hono<AppBindings>()
@@ -35,6 +47,12 @@ adviceRoute.post('/question', async (c) => {
   const body = await parseJsonBody(c, adviceQuestionBodySchema)
   const answer = await answerAdviceQuestion(body.question)
   return success(c, { answer })
+})
+
+adviceRoute.post('/detail', async (c) => {
+  const body = await parseJsonBody(c, adviceDetailBodySchema)
+  const detail = await generateAdviceDetail(body)
+  return success(c, detail)
 })
 
 adviceRoute.post('/generate', async (c) => {

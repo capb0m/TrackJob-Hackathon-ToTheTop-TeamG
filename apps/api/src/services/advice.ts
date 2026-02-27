@@ -10,7 +10,12 @@ import { getUserById } from '../db/repositories/users'
 import { getCurrentYearMonth } from '../lib/date'
 import { AppError } from '../lib/errors'
 import { extractFirstJsonObject, generateGeminiText } from './gemini'
-import { ADVICE_SYSTEM_PROMPT, buildAdviceUserContext } from './prompts/advice'
+import {
+  ADVICE_DETAIL_SYSTEM_PROMPT,
+  ADVICE_SYSTEM_PROMPT,
+  buildAdviceDetailUserPrompt,
+  buildAdviceUserContext,
+} from './prompts/advice'
 
 const adviceModelResponseSchema = z.object({
   score: z.number().int().min(0).max(100),
@@ -18,6 +23,10 @@ const adviceModelResponseSchema = z.object({
   suggestions: z.array(z.object({ title: z.string().min(1), body: z.string().min(1) })).min(1).max(3),
   positives: z.array(z.object({ title: z.string().min(1), body: z.string().min(1) })).min(1).max(2),
   next_month_goals: z.array(z.string().min(1)).min(1).max(4),
+})
+
+const adviceDetailResponseSchema = z.object({
+  proposal_items: z.array(z.string().min(1)).min(2).max(4),
 })
 
 const FALLBACK_ADVICE_CONTENT: AdviceContent = {
@@ -41,6 +50,17 @@ const FALLBACK_ADVICE_CONTENT: AdviceContent = {
   next_month_goals: ['週次で支出を振り返る', '固定費を1つ見直す'],
 }
 
+const FALLBACK_IMPROVEMENT_PROPOSAL_ITEMS = [
+  '直近14日間の同カテゴリ支出を確認し、固定費と変動費に分けて削減候補を1つ決める',
+  '金額インパクトが大きい項目から優先順位を付け、今月中に1件だけ見直しを実行する',
+  '週の中間時点で予算消化率を確認し、超過しそうなら週末前に支出上限を再設定する',
+]
+
+const FALLBACK_POSITIVE_PROPOSAL_ITEMS = [
+  '達成できた行動をメモし、来月も同じ曜日・時間で再現するルールを1つ固定する',
+  '良い結果につながった金額感を記録し、来月の予算配分に反映して継続しやすくする',
+]
+
 export type GenerateAdviceParams = {
   userId: string
   month: string
@@ -53,6 +73,13 @@ export type GeneratedAdviceResult = {
   score: number
   content: AdviceContent
   generated_at: string
+}
+
+export type GenerateAdviceDetailParams = {
+  section: 'improvement' | 'positive'
+  title: string
+  summary: string
+  urgent?: boolean
 }
 
 function toGeneratedAdviceResult(row: {
@@ -159,6 +186,35 @@ function parseAdviceModelOutput(rawText: string): { score: number; content: Advi
   }
 }
 
+function parseAdviceDetailOutput(rawText: string, fallbackItems: string[]) {
+  try {
+    const jsonText = extractFirstJsonObject(rawText)
+    if (!jsonText) {
+      return fallbackItems
+    }
+
+    const parsed = adviceDetailResponseSchema.safeParse(JSON.parse(jsonText))
+    if (!parsed.success) {
+      return fallbackItems
+    }
+
+    const normalizedItems = [...new Set(parsed.data.proposal_items.map((item) => item.trim()).filter(Boolean))]
+    if (normalizedItems.length < 2) {
+      return fallbackItems
+    }
+
+    return normalizedItems
+  } catch {
+    return fallbackItems
+  }
+}
+
+function getAdviceDetailFallbackItems(section: 'improvement' | 'positive') {
+  return section === 'improvement'
+    ? FALLBACK_IMPROVEMENT_PROPOSAL_ITEMS
+    : FALLBACK_POSITIVE_PROPOSAL_ITEMS
+}
+
 export async function findAdviceCache(userId: string, month?: string) {
   const targetMonth = month ?? getCurrentYearMonth()
   const advice = await getAdviceByMonth(userId, targetMonth)
@@ -190,6 +246,25 @@ export async function answerAdviceQuestion(question: string): Promise<string> {
     return answer.trim()
   } catch {
     return '申し訳ありません。回答の生成に失敗しました。しばらくしてから再度お試しください。'
+  }
+}
+
+export async function generateAdviceDetail(params: GenerateAdviceDetailParams): Promise<{ proposal_items: string[] }> {
+  const fallbackItems = getAdviceDetailFallbackItems(params.section)
+
+  try {
+    const responseText = await generateGeminiText({
+      systemInstruction: ADVICE_DETAIL_SYSTEM_PROMPT,
+      prompt: buildAdviceDetailUserPrompt(params),
+    })
+
+    return {
+      proposal_items: parseAdviceDetailOutput(responseText, fallbackItems),
+    }
+  } catch {
+    return {
+      proposal_items: fallbackItems,
+    }
   }
 }
 

@@ -16,6 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
 import { useBudgets } from '@/hooks/useBudgets'
+import { useExpenseAnalysis } from '@/hooks/useExpenseAnalysis'
 import { useTransactions, useTransactionSummary } from '@/hooks/useTransactions'
 import { useToast } from '@/hooks/useToast'
 import { transactionsApi } from '@/lib/api'
@@ -94,6 +95,13 @@ export default function ExpensePage() {
 
   const { budgetSummary, budgets, isLoading: budgetsLoading } = useBudgets(month)
   const { data: summary, isLoading: summaryLoading } = useTransactionSummary(month)
+  const {
+    analysis,
+    loading: analysisLoading,
+    refreshing: analysisRefreshing,
+    error: analysisError,
+    refresh: refreshAnalysis,
+  } = useExpenseAnalysis(month)
 
   const pieData = useMemo(
     () =>
@@ -207,25 +215,48 @@ export default function ExpensePage() {
       </div>
 
       <Card className="bg-card">
-        <CardHeader className="mb-2 flex-col items-start gap-1">
-          <CardTitle className="text-accent">KakeAIによる分析</CardTitle>
-          <p className="text-sm text-text2">今月の支出傾向をもとにしたモック分析です。実データ連携は次フェーズで対応します。</p>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-3 md:grid-cols-3">
-            <div className="rounded-xl bg-card2 p-3">
-              <p className="text-xs font-semibold text-text2">気になる傾向</p>
-              <p className="mt-1 text-sm font-semibold text-text">平日ランチ支出が週後半に増加</p>
-            </div>
-            <div className="rounded-xl bg-card2 p-3">
-              <p className="text-xs font-semibold text-text2">改善アイデア</p>
-              <p className="mt-1 text-sm font-semibold text-text">週2回を上限に外食日を固定すると安定</p>
-            </div>
-            <div className="rounded-xl bg-card2 p-3">
-              <p className="text-xs font-semibold text-text2">次アクション</p>
-              <p className="mt-1 text-sm font-semibold text-text">次月は食費カテゴリを毎週チェック</p>
-            </div>
+        <CardHeader className="mb-2 flex-col items-start gap-3 md:flex-row md:items-start md:justify-between">
+          <div>
+            <CardTitle className="text-accent">KakeAIによる分析</CardTitle>
+            <p className="text-sm text-text2">選択中の{month}の支出データをもとに、LLMで分析を生成しています。</p>
           </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            className={`h-9 px-4 text-xs font-semibold ${CTA_HOVER_GHOST_BUTTON_CLASS}`}
+            onClick={() => void refreshAnalysis()}
+            disabled={analysisLoading || analysisRefreshing}
+          >
+            {analysisRefreshing ? '再分析中...' : '再分析する'}
+          </Button>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {analysisLoading ? <p className="text-sm text-text2">分析を生成中...</p> : null}
+          {analysisError ? <p className="text-sm text-danger">{analysisError}</p> : null}
+
+          {analysis ? (
+            <>
+              <div className="grid gap-3 md:grid-cols-3">
+                <div className="rounded-xl bg-card2 p-3">
+                  <p className="text-xs font-semibold text-text2">気になる傾向</p>
+                  <p className="mt-1 text-sm font-semibold text-text">{analysis.trend.title}</p>
+                  <p className="mt-1 text-xs text-text2">{analysis.trend.body}</p>
+                </div>
+                <div className="rounded-xl bg-card2 p-3">
+                  <p className="text-xs font-semibold text-text2">改善アイデア</p>
+                  <p className="mt-1 text-sm font-semibold text-text">{analysis.idea.title}</p>
+                  <p className="mt-1 text-xs text-text2">{analysis.idea.body}</p>
+                </div>
+                <div className="rounded-xl bg-card2 p-3">
+                  <p className="text-xs font-semibold text-text2">次アクション</p>
+                  <p className="mt-1 text-sm font-semibold text-text">{analysis.next_action}</p>
+                </div>
+              </div>
+              <p className="text-xs text-text2">
+                最終生成: {new Date(analysis.generated_at).toLocaleString('ja-JP')}
+              </p>
+            </>
+          ) : null}
         </CardContent>
       </Card>
 

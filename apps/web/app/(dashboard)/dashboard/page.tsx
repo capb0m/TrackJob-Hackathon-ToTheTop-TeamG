@@ -1,8 +1,8 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useMemo, useState } from 'react'
-import type { Transaction, TransactionCategory } from '@lifebalance/shared/types'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import type { AdviceItem, Transaction, TransactionCategory } from '@lifebalance/shared/types'
 
 import { TrendChart } from '@/components/charts/TrendChart'
 import { AddExpenseModal } from '@/components/modals/AddExpenseModal'
@@ -10,12 +10,13 @@ import { AddIncomeModal } from '@/components/modals/AddIncomeModal'
 import { EditTransactionModal } from '@/components/modals/EditTransactionModal'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Dialog, DialogBody, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Tabs } from '@/components/ui/tabs'
 import { useAdvice } from '@/hooks/useAdvice'
 import { useBudgets } from '@/hooks/useBudgets'
 import { useGoals } from '@/hooks/useGoals'
 import { useRecordingStreak, useTransactionTrend, useTransactions, useTransactionSummary } from '@/hooks/useTransactions'
-import { authProfileApi } from '@/lib/api'
+import { adviceApi, authProfileApi } from '@/lib/api'
 import { formatCurrency, getCurrentYearMonth } from '@/lib/utils'
 
 const tabs = [
@@ -46,6 +47,27 @@ type TrendPoint = {
   budget?: number
 }
 
+type DisplayAdviceItem = AdviceItem & {
+  urgent?: boolean
+}
+
+type AdviceDetailModalContent = {
+  detailKey: string
+  sectionTitle: string
+  title: string
+  summary: string
+  proposalItems: string[]
+  urgent?: boolean
+  isGenerating: boolean
+  generationError: string | null
+}
+
+const IMPROVEMENT_DETAIL_FALLBACK_ITEMS = [
+  '直近14日間の同カテゴリ支出を確認し、固定費・変動費に分けて改善対象を明確化する',
+  '金額インパクトが大きい項目から優先順位を付け、今月中に1件見直す',
+  '週の中間時点で実績を確認し、必要なら予算配分を微調整する',
+]
+
 function calculateBudgetAchievementStreak(points: TrendPoint[]) {
   let streak = 0
   for (const point of points) {
@@ -75,6 +97,32 @@ function getDashboardGreeting(now: Date) {
   return 'おかえりなさい'
 }
 
+function buildAdviceDetailKey(item: DisplayAdviceItem, sectionTitle: string) {
+  return `${sectionTitle}:${item.title}:${item.body}:${item.urgent ? '1' : '0'}`
+}
+
+function normalizeProposalItems(items: string[], fallbackItems: string[]) {
+  const normalizedItems = [...new Set(items.map((item) => item.trim()).filter(Boolean))]
+  if (normalizedItems.length === 0) {
+    return fallbackItems
+  }
+  return normalizedItems
+}
+
+function buildAdviceDetailModalContent(item: DisplayAdviceItem, sectionTitle: string): AdviceDetailModalContent {
+  const detailKey = buildAdviceDetailKey(item, sectionTitle)
+  return {
+    detailKey,
+    sectionTitle,
+    title: item.title,
+    summary: item.body,
+    proposalItems: IMPROVEMENT_DETAIL_FALLBACK_ITEMS,
+    urgent: item.urgent,
+    isGenerating: false,
+    generationError: null,
+  }
+}
+
 export default function DashboardPage() {
   const [range, setRange] = useState<RangeKey>('1m')
   const [expenseModalOpen, setExpenseModalOpen] = useState(false)
@@ -82,6 +130,9 @@ export default function DashboardPage() {
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null)
   const [displayName, setDisplayName] = useState('ユーザー')
   const [now, setNow] = useState(() => new Date())
+  const [selectedAdvice, setSelectedAdvice] = useState<AdviceDetailModalContent | null>(null)
+  const [adviceDetailCache, setAdviceDetailCache] = useState<Record<string, string[]>>({})
+  const detailRequestIdRef = useRef(0)
 
   const currentYearMonth = getCurrentYearMonth()
 
@@ -178,11 +229,87 @@ export default function DashboardPage() {
     return calculateBudgetAchievementStreak(points)
   }, [yearlyTrendData])
 
-  const previewAdviceItems = useMemo(() => {
+  const previewAdviceItems = useMemo<DisplayAdviceItem[]>(() => {
     if (!advice) return []
-    const base = advice.content.urgent.length > 0 ? advice.content.urgent : advice.content.suggestions
-    return base.slice(0, 2)
+    if (advice.content.urgent.length > 0) {
+      return advice.content.urgent.slice(0, 2).map((item) => ({
+        ...item,
+        urgent: true,
+      }))
+    }
+    return advice.content.suggestions.slice(0, 2)
   }, [advice])
+
+  async function handleSelectPreviewAdvice(item: DisplayAdviceItem) {
+    const detailKey = buildAdviceDetailKey(item, '改善提案')
+    const baseDetail = buildAdviceDetailModalContent(item, '改善提案')
+    const cachedProposalItems = adviceDetailCache[detailKey]
+
+    if (cachedProposalItems) {
+      setSelectedAdvice({
+        ...baseDetail,
+        proposalItems: cachedProposalItems,
+        isGenerating: false,
+        generationError: null,
+      })
+      return
+    }
+
+    const requestId = detailRequestIdRef.current + 1
+    detailRequestIdRef.current = requestId
+
+    setSelectedAdvice({
+      ...baseDetail,
+      isGenerating: true,
+      generationError: null,
+    })
+
+    try {
+      const response = await adviceApi.detail({
+        section: 'improvement',
+        title: item.title,
+        summary: item.body,
+        urgent: item.urgent,
+      })
+
+      if (detailRequestIdRef.current !== requestId) {
+        return
+      }
+
+      const proposalItems = normalizeProposalItems(response.proposal_items, IMPROVEMENT_DETAIL_FALLBACK_ITEMS)
+      setAdviceDetailCache((prev) => ({
+        ...prev,
+        [detailKey]: proposalItems,
+      }))
+
+      setSelectedAdvice((prev) => {
+        if (!prev || prev.detailKey !== detailKey) {
+          return prev
+        }
+        return {
+          ...prev,
+          proposalItems,
+          isGenerating: false,
+          generationError: null,
+        }
+      })
+    } catch (requestError) {
+      if (detailRequestIdRef.current !== requestId) {
+        return
+      }
+
+      setSelectedAdvice((prev) => {
+        if (!prev || prev.detailKey !== detailKey) {
+          return prev
+        }
+        return {
+          ...prev,
+          isGenerating: false,
+          generationError: requestError instanceof Error ? requestError.message : '提案の生成に失敗しました。',
+        }
+      })
+    }
+  }
 
   return (
     <div className="space-y-4 pb-20 md:pb-28">
@@ -290,14 +417,16 @@ export default function DashboardPage() {
             </p>
           ) : null}
           {previewAdviceItems.map((item) => (
-            <Link
-              key={item.title}
-              href="/advice"
-              className="block rounded-xl bg-card2 p-3 shadow-[0_8px_16px_rgba(35,55,95,0.08)] transition-all hover:-translate-y-[1px] hover:bg-accent/10"
+            <button
+              key={`${item.title}-${item.body}`}
+              type="button"
+              onClick={() => void handleSelectPreviewAdvice(item)}
+              className="block w-full rounded-xl bg-card2 p-3 text-left shadow-[0_8px_16px_rgba(35,55,95,0.08)] transition-all hover:-translate-y-[1px] hover:bg-accent/10"
+              aria-label={`${item.title}の詳細を表示`}
             >
               <h3 className="text-sm font-semibold text-text">{item.title}</h3>
               <p className="mt-1 text-xs leading-relaxed text-text2">{item.body}</p>
-            </Link>
+            </button>
           ))}
         </CardContent>
       </Card>
@@ -411,6 +540,54 @@ export default function DashboardPage() {
         }}
         transaction={editingTransaction}
       />
+      <AdviceDetailDialog detail={selectedAdvice} onOpenChange={(open) => !open && setSelectedAdvice(null)} />
     </div>
+  )
+}
+
+function AdviceDetailDialog({
+  detail,
+  onOpenChange,
+}: {
+  detail: AdviceDetailModalContent | null
+  onOpenChange: (open: boolean) => void
+}) {
+  return (
+    <Dialog open={detail !== null} onOpenChange={onOpenChange}>
+      {detail ? (
+        <DialogContent className="max-w-xl min-h-[520px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-3">
+              <span>{detail.title}</span>
+              {detail.urgent ? (
+                <span className="rounded-full border border-danger/40 bg-danger/20 px-3 py-1 text-xs font-bold text-danger">
+                  緊急
+                </span>
+              ) : null}
+            </DialogTitle>
+            <Button type="button" variant="ghost" size="sm" className="h-8 px-3 text-xs" onClick={() => onOpenChange(false)}>
+              閉じる
+            </Button>
+          </DialogHeader>
+          <DialogBody className="space-y-4">
+            <div className="rounded-xl border border-border bg-bg2 px-4 py-3">
+              <p className="text-base text-text md:text-lg">{detail.summary}</p>
+            </div>
+            <section className="space-y-3 pt-4">
+              <h3 className="text-lg font-semibold text-text md:text-xl">具体的な提案</h3>
+              {detail.isGenerating ? <p className="text-sm text-text2">KakeAIが具体案を生成中です...</p> : null}
+              {detail.generationError ? <p className="text-xs text-danger">{detail.generationError}</p> : null}
+              <ul className="space-y-2 pl-5 text-base text-text2 md:text-lg">
+                {detail.proposalItems.map((proposal) => (
+                  <li key={proposal} className="list-disc">
+                    {proposal}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          </DialogBody>
+        </DialogContent>
+      ) : null}
+    </Dialog>
   )
 }

@@ -375,6 +375,11 @@ export const adviceApi = {
       method: 'POST',
       body: JSON.stringify(body ?? {}),
     }),
+  detail: (body: { section: 'improvement' | 'positive'; title: string; summary: string; urgent?: boolean }) =>
+    apiRequest<{ proposal_items: string[] }>('/api/advice/detail', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
   question: (question: string) =>
     apiRequest<{ answer: string }>('/api/advice/question', {
       method: 'POST',
