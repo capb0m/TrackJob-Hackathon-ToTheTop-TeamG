@@ -26,7 +26,7 @@ const adviceModelResponseSchema = z.object({
 })
 
 const adviceDetailResponseSchema = z.object({
-  proposal_items: z.array(z.string().min(1)).min(2).max(4),
+  proposal_items: z.array(z.string().min(1)).max(4),
 })
 
 const FALLBACK_ADVICE_CONTENT: AdviceContent = {
@@ -50,16 +50,6 @@ const FALLBACK_ADVICE_CONTENT: AdviceContent = {
   next_month_goals: ['週次で支出を振り返る', '固定費を1つ見直す'],
 }
 
-const FALLBACK_IMPROVEMENT_PROPOSAL_ITEMS = [
-  '直近14日間の同カテゴリ支出を確認し、固定費と変動費に分けて削減候補を1つ決める',
-  '金額インパクトが大きい項目から優先順位を付け、今月中に1件だけ見直しを実行する',
-  '週の中間時点で予算消化率を確認し、超過しそうなら週末前に支出上限を再設定する',
-]
-
-const FALLBACK_POSITIVE_PROPOSAL_ITEMS = [
-  '達成できた行動をメモし、来月も同じ曜日・時間で再現するルールを1つ固定する',
-  '良い結果につながった金額感を記録し、来月の予算配分に反映して継続しやすくする',
-]
 
 export type GenerateAdviceParams = {
   userId: string
@@ -186,34 +176,24 @@ function parseAdviceModelOutput(rawText: string): { score: number; content: Advi
   }
 }
 
-function parseAdviceDetailOutput(rawText: string, fallbackItems: string[]) {
+function parseAdviceDetailOutput(rawText: string) {
   try {
     const jsonText = extractFirstJsonObject(rawText)
     if (!jsonText) {
-      return fallbackItems
+      return [] as string[]
     }
 
     const parsed = adviceDetailResponseSchema.safeParse(JSON.parse(jsonText))
     if (!parsed.success) {
-      return fallbackItems
+      return [] as string[]
     }
 
-    const normalizedItems = [...new Set(parsed.data.proposal_items.map((item) => item.trim()).filter(Boolean))]
-    if (normalizedItems.length < 2) {
-      return fallbackItems
-    }
-
-    return normalizedItems
+    return [...new Set(parsed.data.proposal_items.map((item) => item.trim()).filter(Boolean))]
   } catch {
-    return fallbackItems
+    return [] as string[]
   }
 }
 
-function getAdviceDetailFallbackItems(section: 'improvement' | 'positive') {
-  return section === 'improvement'
-    ? FALLBACK_IMPROVEMENT_PROPOSAL_ITEMS
-    : FALLBACK_POSITIVE_PROPOSAL_ITEMS
-}
 
 export async function findAdviceCache(userId: string, month?: string) {
   const targetMonth = month ?? getCurrentYearMonth()
@@ -250,8 +230,6 @@ export async function answerAdviceQuestion(question: string): Promise<string> {
 }
 
 export async function generateAdviceDetail(params: GenerateAdviceDetailParams): Promise<{ proposal_items: string[] }> {
-  const fallbackItems = getAdviceDetailFallbackItems(params.section)
-
   try {
     const responseText = await generateGeminiText({
       systemInstruction: ADVICE_DETAIL_SYSTEM_PROMPT,
@@ -259,11 +237,11 @@ export async function generateAdviceDetail(params: GenerateAdviceDetailParams): 
     })
 
     return {
-      proposal_items: parseAdviceDetailOutput(responseText, fallbackItems),
+      proposal_items: parseAdviceDetailOutput(responseText),
     }
   } catch {
     return {
-      proposal_items: fallbackItems,
+      proposal_items: [],
     }
   }
 }

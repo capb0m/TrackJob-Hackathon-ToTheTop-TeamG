@@ -9,7 +9,6 @@ import { Dialog, DialogBody, DialogContent, DialogHeader, DialogTitle } from '@/
 import { Input } from '@/components/ui/input'
 import { useToast } from '@/hooks/useToast'
 import { assumptionsApi, authProfileApi, connectionsApi } from '@/lib/api'
-import { useChatWizardStore } from '@/stores/chatWizardStore'
 
 type AssumptionsDraft = {
   age: number
@@ -44,7 +43,6 @@ export default function SettingsPage() {
   const { toast } = useToast()
   const router = useRouter()
   const searchParams = useSearchParams()
-  const openChatWizard = useChatWizardStore((state) => state.open)
 
   const lineLiffId = process.env.NEXT_PUBLIC_LINE_LIFF_ID
   const lineBotBasicId = process.env.NEXT_PUBLIC_LINE_BOT_BASIC_ID
@@ -333,17 +331,17 @@ export default function SettingsPage() {
 
         <Card className="flex h-full flex-col bg-card">
           <CardHeader>
-            <CardTitle className="text-accent">チャットで再設定</CardTitle>
+            <CardTitle className="text-accent">家計状況を再設定</CardTitle>
           </CardHeader>
           <CardContent className="flex flex-1 flex-col gap-4">
             <p className="text-sm leading-relaxed text-text2">
-              予算や目標などの設定を最初から見直したいときは、KakeAIチャットを通して再設定できます。
+              予算や目標などの家計状況を最初から見直したいときは、ここから再設定ができます。
             </p>
             <Button
               className="mt-auto bg-[var(--cta-bg)] text-[var(--cta-text)] hover:bg-[var(--cta-hover)]"
-              onClick={() => openChatWizard('budget')}
+              onClick={() => router.push('/setup?mode=reconfigure')}
             >
-              🤖 KakeAIチャットで再設定する
+              家計状況を再設定する
             </Button>
           </CardContent>
         </Card>

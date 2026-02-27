@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import type { ChatSetupContext } from '@lifebalance/shared/types'
 
 import { Button } from '@/components/ui/button'
@@ -137,6 +137,7 @@ function buildSetupContext(answers: SetupAnswers): ChatSetupContext {
 
 export default function SetupPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { toast } = useToast()
   const wizard = useChatWizard()
   const bottomRef = useRef<HTMLDivElement>(null)
@@ -150,6 +151,7 @@ export default function SetupPage() {
 
   const currentQuestion = SETUP_QUESTIONS[questionIndex]
   const isLastQuestion = questionIndex === SETUP_QUESTIONS.length - 1
+  const isReconfigureMode = searchParams.get('mode') === 'reconfigure'
 
   useEffect(() => {
     const supabase = getSupabaseBrowserClient()
@@ -159,24 +161,50 @@ export default function SetupPage() {
         return
       }
 
+      let profileDisplayName = ''
+      let profileMonthlyIncome: number | undefined
+
       try {
         const profile = await authProfileApi.get()
-        if (profile.display_name !== '') {
+        profileDisplayName = profile.display_name
+        profileMonthlyIncome = Number.isFinite(profile.monthly_income)
+          ? Math.max(0, Math.round(profile.monthly_income))
+          : undefined
+        if (!isReconfigureMode && profile.display_name !== '') {
           router.replace('/dashboard')
           return
         }
       } catch (error) {
-        if (error instanceof ApiError && error.status !== 404) {
+        if (!isReconfigureMode && error instanceof ApiError && error.status !== 404) {
           router.replace('/dashboard')
           return
         }
       }
 
+      const initialAnswers: SetupAnswers = {
+        display_name: profileDisplayName,
+        ...(profileMonthlyIncome === undefined ? {} : { monthly_income: profileMonthlyIncome }),
+      }
+
+      if (isReconfigureMode) {
+        try {
+          const assumptions = await assumptionsApi.get()
+          initialAnswers.age = Math.max(0, Math.round(assumptions.age))
+        } catch {
+          // 再設定時の補助情報取得失敗は、入力を続行できるように無視する
+        }
+      }
+
+      const startIndex = isReconfigureMode && initialAnswers.display_name.trim() ? 1 : 0
+      const startQuestion = SETUP_QUESTIONS[startIndex]
+
+      setAnswers(initialAnswers)
       setStep('questions')
-      setQuestionIndex(0)
-      setInputValue('')
+      setQuestionIndex(startIndex)
+      setInputValue(formatAnswerValue(startQuestion.key, initialAnswers))
+      setQuestionError('')
     })
-  }, [router])
+  }, [isReconfigureMode, router])
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -205,6 +233,9 @@ export default function SetupPage() {
     () => wizard.isComplete && wizard.config && !wizard.saving,
     [wizard.config, wizard.isComplete, wizard.saving],
   )
+
+  const initialModelMessage = wizard.messages[0]?.role === 'model' ? wizard.messages[0] : null
+  const chatMessages = initialModelMessage ? wizard.messages.slice(1) : wizard.messages
 
   function handleQuestionInputChange(raw: string) {
     if (!currentQuestion || currentQuestion.inputMode !== 'numeric') {
@@ -432,8 +463,8 @@ export default function SetupPage() {
     <main className="flex min-h-screen items-center justify-center px-4 py-8">
       <div className="w-full max-w-2xl">
         <div className="mb-6">
-          <h1 className="font-display text-2xl font-bold">初期設定</h1>
-          <p className="mt-1 text-sm text-text2">AIとの会話で目標・貯蓄目標・節約の意思を設定します。</p>
+          <h1 className="font-display text-2xl font-bold">KakeAIチャット</h1>
+          <p className="mt-1 text-sm text-text2">KakeAIとの会話を通して、今後のライフプランや節約に対する意気込みを設定します。</p>
         </div>
 
         <div className="rounded-2xl border border-border bg-card p-6 shadow-[0_10px_28px_rgba(35,55,95,0.06)]">
@@ -443,26 +474,33 @@ export default function SetupPage() {
             </p>
           ) : null}
 
-          <div
-            className="max-h-[400px] space-y-4 overflow-y-auto rounded-xl border border-border bg-card2 p-3"
-            aria-live="polite"
-          >
-            {wizard.messages.map((message, index) =>
+          <div className="max-h-[520px] space-y-4 overflow-y-auto" aria-live="polite">
+            {initialModelMessage ? (
+              <div className="flex items-start gap-2">
+                <AiAvatar />
+                <div className="max-w-[85%] rounded-lg rounded-tl-none border border-accent/20 bg-accent/10 px-3 py-2 text-sm text-text whitespace-pre-wrap">
+                  {initialModelMessage.content}
+                </div>
+              </div>
+            ) : null}
+
+            {chatMessages.map((message, index) =>
               message.role === 'model' ? (
                 <div key={`${message.role}-${index}`} className="flex items-start gap-2">
                   <AiAvatar />
-                  <div className="max-w-[85%] rounded-lg rounded-tl-none border border-accent/20 bg-accent/10 px-3 py-2 text-sm text-text">
+                  <div className="max-w-[85%] rounded-lg rounded-tl-none border border-accent/20 bg-accent/10 px-3 py-2 text-sm text-text whitespace-pre-wrap">
                     {message.content}
                   </div>
                 </div>
               ) : (
                 <div key={`${message.role}-${index}`} className="flex justify-end">
-                  <div className="max-w-[85%] rounded-lg rounded-tr-none border border-border bg-card px-3 py-2 text-sm text-text">
+                  <div className="max-w-[85%] rounded-lg rounded-tr-none border border-border bg-card px-3 py-2 text-sm text-text whitespace-pre-wrap">
                     {message.content}
                   </div>
                 </div>
               ),
             )}
+
             {wizard.loading ? (
               <div className="flex items-start gap-2">
                 <AiAvatar />
@@ -475,6 +513,7 @@ export default function SetupPage() {
                 </div>
               </div>
             ) : null}
+
             <div ref={bottomRef} />
           </div>
 
@@ -500,7 +539,7 @@ export default function SetupPage() {
                 disabled={wizard.loading}
                 aria-label="チャット入力"
               />
-              <Button type="submit" disabled={!wizard.canSend}>
+              <Button type="submit" disabled={!wizard.canSend} className="px-6 shrink-0">
                 送信
               </Button>
             </form>

@@ -51,7 +51,7 @@ const FALLBACK_QUESTIONS = [
 const INITIAL_MESSAGES: ChatMessage[] = [
   {
     role: 'model',
-    content: 'こんにちは。初期設定を進めます。最重要ライフイベントを教えてください。',
+    content: 'こんにちは！\n私は、家計管理をサポートするKakeAIと申します。\n今後の家計プランを設計していくために、いくつか質問させてください。\n\nまず、将来的にお金を準備したいライフイベントはありますか？\n例: マイホーム・結婚・育児・FIRE・留学',
   },
 ]
 

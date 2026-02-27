@@ -62,11 +62,7 @@ type AdviceDetailModalContent = {
   generationError: string | null
 }
 
-const IMPROVEMENT_DETAIL_FALLBACK_ITEMS = [
-  '直近14日間の同カテゴリ支出を確認し、固定費・変動費に分けて改善対象を明確化する',
-  '金額インパクトが大きい項目から優先順位を付け、今月中に1件見直す',
-  '週の中間時点で実績を確認し、必要なら予算配分を微調整する',
-]
+const IMPROVEMENT_DETAIL_FALLBACK_ITEMS: string[] = []
 
 function calculateBudgetAchievementStreak(points: TrendPoint[]) {
   let streak = 0
@@ -101,12 +97,8 @@ function buildAdviceDetailKey(item: DisplayAdviceItem, sectionTitle: string) {
   return `${sectionTitle}:${item.title}:${item.body}:${item.urgent ? '1' : '0'}`
 }
 
-function normalizeProposalItems(items: string[], fallbackItems: string[]) {
-  const normalizedItems = [...new Set(items.map((item) => item.trim()).filter(Boolean))]
-  if (normalizedItems.length === 0) {
-    return fallbackItems
-  }
-  return normalizedItems
+function normalizeProposalItems(items: string[]) {
+  return [...new Set(items.map((item) => item.trim()).filter(Boolean))]
 }
 
 function buildAdviceDetailModalContent(item: DisplayAdviceItem, sectionTitle: string): AdviceDetailModalContent {
@@ -116,7 +108,7 @@ function buildAdviceDetailModalContent(item: DisplayAdviceItem, sectionTitle: st
     sectionTitle,
     title: item.title,
     summary: item.body,
-    proposalItems: IMPROVEMENT_DETAIL_FALLBACK_ITEMS,
+    proposalItems: [],
     urgent: item.urgent,
     isGenerating: false,
     generationError: null,
@@ -276,7 +268,7 @@ export default function DashboardPage() {
         return
       }
 
-      const proposalItems = normalizeProposalItems(response.proposal_items, IMPROVEMENT_DETAIL_FALLBACK_ITEMS)
+      const proposalItems = normalizeProposalItems(response.proposal_items)
       setAdviceDetailCache((prev) => ({
         ...prev,
         [detailKey]: proposalItems,
@@ -577,13 +569,18 @@ function AdviceDetailDialog({
               <h3 className="text-lg font-semibold text-text md:text-xl">具体的な提案</h3>
               {detail.isGenerating ? <p className="text-sm text-text2">KakeAIが具体案を生成中です...</p> : null}
               {detail.generationError ? <p className="text-xs text-danger">{detail.generationError}</p> : null}
-              <ul className="space-y-2 pl-5 text-base text-text2 md:text-lg">
-                {detail.proposalItems.map((proposal) => (
-                  <li key={proposal} className="list-disc">
-                    {proposal}
-                  </li>
-                ))}
-              </ul>
+              {!detail.isGenerating && !detail.generationError && detail.proposalItems.length === 0 ? (
+                <p className="text-sm text-text2">具体的な提案はまだありません。</p>
+              ) : null}
+              {detail.proposalItems.length > 0 ? (
+                <ul className="space-y-2 pl-5 text-base text-text2 md:text-lg">
+                  {detail.proposalItems.map((proposal) => (
+                    <li key={proposal} className="list-disc">
+                      {proposal}
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
             </section>
           </DialogBody>
         </DialogContent>

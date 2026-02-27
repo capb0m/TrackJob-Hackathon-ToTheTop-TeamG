@@ -26,17 +26,7 @@ type AdviceDetailModalContent = {
   generationError: string | null
 }
 
-const IMPROVEMENT_DETAIL_FALLBACK_ITEMS = [
-  '直近14日間の同カテゴリ支出を確認し、固定費・変動費に分けて改善対象を明確化する',
-  '金額インパクトが大きい項目から優先順位を付け、今月中に1件見直す',
-  '週の中間時点で実績を確認し、必要なら予算配分を微調整する',
-]
-
-const POSITIVE_DETAIL_FALLBACK_ITEMS = [
-  '現在の良い行動を再現できる形に整理し、来月のルールとして固定化する',
-  '達成理由を金額や頻度で言語化し、再現しやすい条件を残す',
-  '来月も続ける条件を1つ決め、設定に反映して習慣化する',
-]
+const IMPROVEMENT_DETAIL_FALLBACK_ITEMS: string[] = []
 
 export default function AdvicePage() {
   const { advice, history, loading, refreshing, error, refresh } = useAdvice()
@@ -81,7 +71,7 @@ export default function AdvicePage() {
           return
         }
 
-        const proposalItems = normalizeProposalItems(response.proposal_items, IMPROVEMENT_DETAIL_FALLBACK_ITEMS)
+        const proposalItems = normalizeProposalItems(response.proposal_items)
         setAdviceDetailCache((prev) => ({
           ...prev,
           [detailKey]: proposalItems,
@@ -342,13 +332,18 @@ function AdviceDetailDialog({
               </h3>
               {detail.isGenerating ? <p className="text-sm text-text2">KakeAIが具体案を生成中です...</p> : null}
               {detail.generationError ? <p className="text-xs text-danger">{detail.generationError}</p> : null}
-              <ul className={detail.sectionTitle === '改善提案' ? 'space-y-2 pl-5 text-base text-text2 md:text-lg' : 'space-y-2 pl-5 text-sm text-text2'}>
-                {detail.proposalItems.map((proposal) => (
-                  <li key={proposal} className="list-disc">
-                    {proposal}
-                  </li>
-                ))}
-              </ul>
+              {!detail.isGenerating && !detail.generationError && detail.proposalItems.length === 0 ? (
+                <p className="text-sm text-text2">具体的な提案はまだありません。</p>
+              ) : null}
+              {detail.proposalItems.length > 0 ? (
+                <ul className={detail.sectionTitle === '改善提案' ? 'space-y-2 pl-5 text-base text-text2 md:text-lg' : 'space-y-2 pl-5 text-sm text-text2'}>
+                  {detail.proposalItems.map((proposal) => (
+                    <li key={proposal} className="list-disc">
+                      {proposal}
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
             </section>
           </DialogBody>
         </DialogContent>
@@ -361,12 +356,8 @@ function buildAdviceDetailKey(item: DisplayAdviceItem, sectionTitle: string) {
   return `${sectionTitle}:${item.title}:${item.body}:${item.urgent ? '1' : '0'}`
 }
 
-function normalizeProposalItems(items: string[], fallbackItems: string[]) {
-  const normalizedItems = [...new Set(items.map((item) => item.trim()).filter(Boolean))]
-  if (normalizedItems.length === 0) {
-    return fallbackItems
-  }
-  return normalizedItems
+function normalizeProposalItems(items: string[]) {
+  return [...new Set(items.map((item) => item.trim()).filter(Boolean))]
 }
 
 function buildAdviceDetailModalContent(item: DisplayAdviceItem, sectionTitle: string): AdviceDetailModalContent {
@@ -377,7 +368,7 @@ function buildAdviceDetailModalContent(item: DisplayAdviceItem, sectionTitle: st
     sectionTitle,
     title: item.title,
     summary: item.body,
-    proposalItems: sectionTitle === '改善提案' ? IMPROVEMENT_DETAIL_FALLBACK_ITEMS : POSITIVE_DETAIL_FALLBACK_ITEMS,
+    proposalItems: [],
     urgent: item.urgent,
     isGenerating: false,
     generationError: null,

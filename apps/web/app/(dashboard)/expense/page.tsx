@@ -218,7 +218,6 @@ export default function ExpensePage() {
         <CardHeader className="mb-2 flex-col items-start gap-3 md:flex-row md:items-start md:justify-between">
           <div>
             <CardTitle className="text-accent">KakeAIによる分析</CardTitle>
-            <p className="text-sm text-text2">選択中の{month}の支出データをもとに、LLMで分析を生成しています。</p>
           </div>
           <Button
             variant="ghost"
