@@ -4,6 +4,7 @@ export const queryKeys = {
   budgets: (yearMonth: string) => ['budgets', yearMonth] as const,
   budgetStreak: () => ['budgets', 'streak'] as const,
   goals: (status: 'all' | 'active' | 'paused' | 'completed') => ['goals', status] as const,
+  simulationRun: () => ['simulation', 'run'] as const,
   assumptions: () => ['assumptions'] as const,
   transactionStreak: () => ['transactions', 'streak'] as const,
   transactionTrend: (range: string) => ['transactions', 'trend', range] as const,

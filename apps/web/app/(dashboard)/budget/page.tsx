@@ -1,16 +1,11 @@
 'use client'
 
 import { BudgetEditForm } from '@/components/forms/BudgetEditForm'
-import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useBudgets, usePatchBudget } from '@/hooks/useBudgets'
 import { formatCurrency, getCurrentYearMonth } from '@/lib/utils'
-import { useChatWizardStore } from '@/stores/chatWizardStore'
-
-const SECONDARY_ACTION_BUTTON_CLASS = 'h-12 px-6 text-base font-bold'
 
 export default function BudgetPage() {
-  const openChatWizard = useChatWizardStore((state) => state.open)
   const yearMonth = getCurrentYearMonth()
 
   const { budgetSummary, budgets, isLoading: budgetsLoading, error: budgetsError } = useBudgets(yearMonth)
@@ -18,14 +13,9 @@ export default function BudgetPage() {
 
   return (
     <div className="space-y-5 pb-20 md:pb-28">
-      <div className="flex flex-col items-start justify-between gap-3 md:flex-row md:items-center">
-        <div>
-          <h1 className="font-display text-[30px] font-bold leading-tight tracking-[-0.02em] text-text">予算設定</h1>
-          <p className="text-sm text-text2">月次予算をカテゴリごとに調整できます</p>
-        </div>
-        <Button variant="ghost" className={SECONDARY_ACTION_BUTTON_CLASS} onClick={() => openChatWizard('budget')}>
-          🤖 KakeAIチャットで再設定
-        </Button>
+      <div>
+        <h1 className="font-display text-[30px] font-bold leading-tight tracking-[-0.02em] text-text">予算設定</h1>
+        <p className="text-sm text-text2">月次予算をカテゴリごとに調整できます</p>
       </div>
 
       <Card className="bg-card">

@@ -224,6 +224,7 @@ function buildConfigFromDraft(draft: Required<FallbackDraft>): ChatWizardConfig 
   return {
     monthly_income: draft.monthly_income,
     monthly_savings_target: draft.monthly_savings_target,
+    current_savings: draft.current_savings,
     life_goals: [
       {
         title: draft.event_title,
@@ -516,6 +517,7 @@ export function useChatWizard() {
           title: goal.title,
           icon: goal.icon,
           target_amount: goal.target_amount,
+          saved_amount: Math.max(0, Math.round(config.current_savings ?? 0)),
           monthly_saving: goal.monthly_saving,
           target_year: goal.target_year,
           priority: goal.priority,

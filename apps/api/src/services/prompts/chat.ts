@@ -33,6 +33,7 @@ export function getChatSystemPrompt(): string {
 {
   "monthly_income": 300000,
   "monthly_savings_target": 50000,
+  "current_savings": 1200000,
   "life_goals": [
     {
       "title": "マイホーム購入",
@@ -61,6 +62,7 @@ export function getChatSystemPrompt(): string {
 - suggested_budgetsのキーは必ず housing / food / transport / entertainment / clothing / communication / medical / social / other の英語9種類のみ使う（日本語キー不可）
 - priorityは必ず「高」「中」「低」のいずれか（英語不可）
 - すべての金額は整数（小数点なし・単位は円）
+- current_savingsには現在の貯蓄額（円）を必ず設定する
 - target_yearは${currentYear}年以降の整数
 - monthly_incomeからmonthly_savings_targetと固定費を差し引いた残りで変動費を按分する
 - ユーザーが同意したら必ずCONFIGタグを出力する（出力しないと設定が保存できない）

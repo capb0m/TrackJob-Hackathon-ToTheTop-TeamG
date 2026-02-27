@@ -29,6 +29,7 @@ export function useCreateGoal() {
     mutationFn: goalsApi.create,
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['goals'] })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.simulationRun() })
       toast({ title: '目標を追加しました。', variant: 'success' })
     },
     onError: (error) => {
@@ -51,6 +52,7 @@ export function usePatchGoal() {
     }) => goalsApi.patch(payload.id, payload.body),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['goals'] })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.simulationRun() })
       toast({ title: '目標を更新しました。', variant: 'success' })
     },
     onError: (error) => {
@@ -70,6 +72,7 @@ export function useDeleteGoal() {
     mutationFn: (id: string) => goalsApi.remove(id),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['goals'] })
+      void queryClient.invalidateQueries({ queryKey: queryKeys.simulationRun() })
       toast({ title: '目標を削除しました。', variant: 'success' })
     },
     onError: (error) => {

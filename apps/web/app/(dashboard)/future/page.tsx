@@ -115,7 +115,8 @@ export default function FuturePage() {
   const { goals, isLoading: goalsLoading, error: goalsError } = useGoals('all')
   const { mutateAsync: updateAssumptions } = useUpdateAssumptions()
   const runSimulation = useSimulation()
-  const { mutateAsync: runScenarioSimulation, data: scenarioSimulationData } = useScenarioSimulation()
+  const { mutateAsync: runScenarioSimulation, data: scenarioSimulationData, reset: resetScenarioSimulation } =
+    useScenarioSimulation()
   const deleteGoal = useDeleteGoal()
 
   const [assumption, setAssumption] = useState<AssumptionFormState | null>(null)
@@ -271,10 +272,20 @@ export default function FuturePage() {
     [assumption],
   )
 
-  const displaySimulation: SimulationResult = useMemo(
-    () => scenarioSimulationData ?? runSimulation.data ?? fallbackSimulationResult,
-    [runSimulation.data, scenarioSimulationData],
-  )
+  const displaySimulation: SimulationResult = useMemo(() => {
+    if (scenarioSimulationData && runSimulation.data) {
+      const scenarioCalculatedAt = Date.parse(scenarioSimulationData.calculated_at)
+      const runCalculatedAt = Date.parse(runSimulation.data.calculated_at)
+
+      if (Number.isFinite(scenarioCalculatedAt) && Number.isFinite(runCalculatedAt)) {
+        return scenarioCalculatedAt >= runCalculatedAt ? scenarioSimulationData : runSimulation.data
+      }
+
+      return scenarioSimulationData
+    }
+
+    return scenarioSimulationData ?? runSimulation.data ?? fallbackSimulationResult
+  }, [runSimulation.data, scenarioSimulationData])
 
   const simulationGoalById = useMemo(
     () => new Map(displaySimulation.goal_probabilities.map((goalProbability) => [goalProbability.goal_id, goalProbability])),
@@ -316,6 +327,10 @@ export default function FuturePage() {
           ),
         )
         await queryClient.invalidateQueries({ queryKey: ['goals'] })
+        await queryClient.invalidateQueries({ queryKey: ['simulation', 'run'] })
+        resetScenarioSimulation()
+        await runSimulation.refetch()
+        setSimulationStatus('現在の貯蓄額を反映してシミュレーションを更新しました。')
       }
 
       setCommonSavedAmount(nextSavedAmount)
@@ -367,8 +382,8 @@ export default function FuturePage() {
     <div className="space-y-5 pb-20 md:pb-28">
       <div className="flex flex-col items-start justify-between gap-3 md:flex-row md:items-center">
         <div>
-          <h1 className="font-display text-[30px] font-bold leading-tight tracking-[-0.02em] text-text">資産とライフプラン</h1>
-          <p className="text-sm text-text2">目標・資産額の管理や、資産シミュレーションを確認できます</p>
+          <h1 className="font-display text-[30px] font-bold leading-tight tracking-[-0.02em] text-text">貯蓄とライフプラン</h1>
+          <p className="text-sm text-text2">目標・貯蓄額の管理や、貯蓄シミュレーションを確認できます</p>
         </div>
         <Button className={PRIMARY_ACTION_BUTTON_CLASS} onClick={() => setOpenAddGoal(true)}>
           ＋ 目標を追加
@@ -571,7 +586,7 @@ export default function FuturePage() {
 
       <Card className="bg-card">
         <CardHeader>
-          <CardTitle className="text-accent">資産推移シミュレーション</CardTitle>
+          <CardTitle className="text-accent">貯蓄推移シミュレーション</CardTitle>
           <Button variant="ghost" size="sm" onClick={() => setOpenAssumptionModal(true)}>
             詳細設定
           </Button>

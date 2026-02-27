@@ -4,11 +4,12 @@ import { useMutation, useQuery } from '@tanstack/react-query'
 
 import { simulationApi } from '@/lib/api'
 import { getApiErrorMessage } from '@/lib/api-error'
+import { queryKeys } from '@/lib/query-keys'
 import { useToast } from '@/hooks/useToast'
 
 export function useSimulation() {
   return useQuery({
-    queryKey: ['simulation', 'run'],
+    queryKey: queryKeys.simulationRun(),
     queryFn: () => simulationApi.run(false),
   })
 }

@@ -15,6 +15,7 @@ export interface ChatWizardGoalConfig {
 export interface ChatWizardConfig {
   monthly_income: number
   monthly_savings_target: number
+  current_savings?: number
   life_goals: ChatWizardGoalConfig[]
   suggested_budgets: Record<string, number>
 }

@@ -141,13 +141,24 @@ function runMonteCarlo(
     targetAmount: number
     targetYear: number
     savedAmount: number
+    updatedAt: Date
   }>,
 ): SimulationResponse {
   const currentYear = getCurrentYear()
   const maxGoalYear = goals.length > 0 ? Math.max(...goals.map((goal) => goal.targetYear)) : currentYear
   const endYear = maxGoalYear + 5
   const years = Array.from({ length: endYear - currentYear + 1 }, (_, index) => currentYear + index)
-  const initialSavings = goals.reduce((sum, goal) => sum + goal.savedAmount, 0)
+  const initialSavings =
+    goals.length === 0
+      ? 0
+      : Math.max(
+          0,
+          toInt(
+            goals.reduce((latest, goal) => {
+              return goal.updatedAt > latest.updatedAt ? goal : latest
+            }).savedAmount,
+          ),
+        )
 
   const yearlyTrialBalances = new Map<number, number[]>()
   years.forEach((year) => yearlyTrialBalances.set(year, []))
@@ -155,7 +166,9 @@ function runMonteCarlo(
   for (let trial = 0; trial < assumptionsSnapshot.simulation_trials; trial += 1) {
     let balance = initialSavings
 
-    for (const year of years) {
+    yearlyTrialBalances.get(currentYear)?.push(balance)
+
+    for (const year of years.slice(1)) {
       const annualIncomeGrowth = randomNormal(assumptionsSnapshot.annual_income_growth / 100, 0.02)
       const investmentReturn = randomNormal(assumptionsSnapshot.investment_return / 100, 0.1)
       const inflationRate = randomNormal(assumptionsSnapshot.inflation_rate / 100, 0.01)

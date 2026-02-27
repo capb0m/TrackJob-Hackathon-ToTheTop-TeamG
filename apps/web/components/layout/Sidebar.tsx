@@ -13,8 +13,8 @@ const navItems = [
   { href: '/dashboard', label: 'ダッシュボード', icon: '📊' },
   { href: '/expense', label: '収支管理', icon: '💳' },
   { href: '/budget', label: '予算設定', icon: '🎯' },
-  { href: '/future', label: '資産とライフプラン', icon: '🔮' },
-  { href: '/advice', label: 'KakeAI', icon: '💡' },
+  { href: '/future', label: '貯蓄とライフプラン', icon: '🔮' },
+  { href: '/advice', label: 'KakeAIからの提案', icon: '💡' },
 ] as const
 
 const activeNavItemClass =
@@ -82,14 +82,6 @@ export function Sidebar({ mobileOpen = false, onNavigate }: SidebarProps) {
       </nav>
 
       <div className="mt-auto space-y-1 border-t border-border px-1 pt-4">
-        <Button
-          variant="ghost"
-          className="h-auto w-full justify-start rounded-[10px] border-none bg-transparent px-3 py-2 text-sm text-text2 shadow-none hover:bg-accent/10 hover:text-text"
-          onClick={handleThemeToggle}
-        >
-          <span className="text-base">{themeMode === 'dark' ? '☀️' : '🌙'}</span>
-          {themeMode === 'dark' ? 'ライトモード' : 'ダークモード'}
-        </Button>
         <Link
           href="/settings"
           onClick={onNavigate}
@@ -101,6 +93,14 @@ export function Sidebar({ mobileOpen = false, onNavigate }: SidebarProps) {
           <span className="text-base">⚙️</span>
           設定
         </Link>
+        <Button
+          variant="ghost"
+          className="h-auto w-full justify-start rounded-[10px] border-none bg-transparent px-3 py-2 text-sm text-text2 shadow-none hover:bg-accent/10 hover:text-text"
+          onClick={handleThemeToggle}
+        >
+          <span className="text-base">{themeMode === 'dark' ? '☀️' : '🌙'}</span>
+          {themeMode === 'dark' ? 'ライトモード' : 'ダークモード'}
+        </Button>
         <Button
           variant="ghost"
           className="h-auto w-full justify-start rounded-[10px] border-none bg-transparent px-3 py-2 text-sm text-text2 shadow-none hover:bg-accent/10 hover:text-text"

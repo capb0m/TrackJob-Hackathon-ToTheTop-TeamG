@@ -86,6 +86,55 @@ function createQueryString(params: Record<string, string | number | undefined>) 
   return queryString ? `?${queryString}` : ''
 }
 
+type AssumptionsUpdateBody = Omit<Assumption, 'id' | 'updated_at'> & {
+  simulation_trials?: Assumption['simulation_trials']
+}
+
+function toFiniteNumber(value: unknown, fieldName: string) {
+  const parsed = typeof value === 'number' ? value : Number(value)
+
+  if (!Number.isFinite(parsed)) {
+    throw new Error(`Invalid numeric value for assumptions field: ${fieldName}`)
+  }
+
+  return parsed
+}
+
+function normalizeSimulationTrials(value: unknown): Assumption['simulation_trials'] {
+  const parsed = toFiniteNumber(value, 'simulation_trials')
+
+  if (parsed === 100 || parsed === 500 || parsed === 1000) {
+    return parsed
+  }
+
+  throw new Error('Invalid simulation_trials value in assumptions payload')
+}
+
+function normalizeAssumptionResponse(assumption: Assumption): Assumption {
+  return {
+    ...assumption,
+    age: toFiniteNumber(assumption.age, 'age'),
+    annual_income_growth: toFiniteNumber(assumption.annual_income_growth, 'annual_income_growth'),
+    investment_return: toFiniteNumber(assumption.investment_return, 'investment_return'),
+    inflation_rate: toFiniteNumber(assumption.inflation_rate, 'inflation_rate'),
+    monthly_investment: toFiniteNumber(assumption.monthly_investment, 'monthly_investment'),
+    simulation_trials: normalizeSimulationTrials(assumption.simulation_trials),
+  }
+}
+
+function normalizeAssumptionUpdateBody(body: AssumptionsUpdateBody): AssumptionsUpdateBody {
+  return {
+    age: toFiniteNumber(body.age, 'age'),
+    annual_income_growth: toFiniteNumber(body.annual_income_growth, 'annual_income_growth'),
+    investment_return: toFiniteNumber(body.investment_return, 'investment_return'),
+    inflation_rate: toFiniteNumber(body.inflation_rate, 'inflation_rate'),
+    monthly_investment: toFiniteNumber(body.monthly_investment, 'monthly_investment'),
+    ...(body.simulation_trials === undefined
+      ? {}
+      : { simulation_trials: normalizeSimulationTrials(body.simulation_trials) }),
+  }
+}
+
 export async function apiRequestEnvelope<T>(path: string, init?: RequestInit): Promise<ApiSuccessEnvelope<T>> {
   const authHeaders = await createAuthHeaders(init?.body)
 
@@ -276,12 +325,15 @@ export const goalsApi = {
 }
 
 export const assumptionsApi = {
-  get: () => apiRequest<Assumption>('/api/assumptions'),
-  update: (body: Omit<Assumption, 'id' | 'updated_at'> & { simulation_trials?: 100 | 500 | 1000 }) =>
-    apiRequest<Assumption>('/api/assumptions', {
+  get: async () => normalizeAssumptionResponse(await apiRequest<Assumption>('/api/assumptions')),
+  update: async (body: AssumptionsUpdateBody) => {
+    const normalizedBody = normalizeAssumptionUpdateBody(body)
+    const response = await apiRequest<Assumption>('/api/assumptions', {
       method: 'PUT',
-      body: JSON.stringify(body),
-    }),
+      body: JSON.stringify(normalizedBody),
+    })
+    return normalizeAssumptionResponse(response)
+  },
 }
 
 export const simulationApi = {

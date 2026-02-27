@@ -76,6 +76,9 @@ function normalizeConfigData(raw: unknown): unknown {
   if (typeof obj.monthly_savings_target === 'number') {
     obj.monthly_savings_target = Math.round(obj.monthly_savings_target)
   }
+  if (typeof obj.current_savings === 'number') {
+    obj.current_savings = Math.max(0, Math.round(obj.current_savings))
+  }
 
   if (Array.isArray(obj.life_goals)) {
     obj.life_goals = obj.life_goals.map((goal: unknown) => {
@@ -140,6 +143,7 @@ ${conversationText}
 {
   "monthly_income": <月収（整数・円）>,
   "monthly_savings_target": <月々の貯蓄目標額（整数・円）>,
+  "current_savings": <現在の貯蓄額（整数・円）>,
   "life_goals": [
     {
       "title": "<ライフイベント名>",

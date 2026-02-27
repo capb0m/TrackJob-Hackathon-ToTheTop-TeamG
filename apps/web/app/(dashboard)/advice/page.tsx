@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from 'react'
 import { ScoreHistoryChart } from '@/components/charts/ScoreHistoryChart'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Dialog, DialogBody, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { useAdvice } from '@/hooks/useAdvice'
 import { adviceApi } from '@/lib/api'
@@ -14,13 +15,22 @@ type DisplayAdviceItem = AdviceItem & {
   urgent?: boolean
 }
 
+type AdviceDetailModalContent = {
+  sectionTitle: string
+  title: string
+  summary: string
+  proposalItems: string[]
+  urgent?: boolean
+}
+
 export default function AdvicePage() {
   const { advice, history, loading, refreshing, error, refresh } = useAdvice()
+  const [selectedAdvice, setSelectedAdvice] = useState<AdviceDetailModalContent | null>(null)
 
   if (loading) {
     return (
       <div className="space-y-5">
-        <h1 className="font-display text-[30px] font-bold leading-tight tracking-[-0.02em] text-text">KakeAI</h1>
+        <h1 className="font-display text-[30px] font-bold leading-tight tracking-[-0.02em] text-text">KakeAIからの提案</h1>
         <p className="text-sm text-text2">読み込み中...</p>
       </div>
     )
@@ -29,7 +39,7 @@ export default function AdvicePage() {
   if (!advice) {
     return (
       <div className="space-y-5">
-        <h1 className="font-display text-[30px] font-bold leading-tight tracking-[-0.02em] text-text">KakeAI</h1>
+        <h1 className="font-display text-[30px] font-bold leading-tight tracking-[-0.02em] text-text">KakeAIからの提案</h1>
         <p className="text-sm text-danger">{error ?? 'アドバイスがありません。'}</p>
         <Button onClick={() => void refresh()} disabled={refreshing}>
           {refreshing ? '更新中...' : '再取得する'}
@@ -50,31 +60,44 @@ export default function AdvicePage() {
     <div className="space-y-5 pb-20 md:pb-28">
       <div className="flex flex-col items-start justify-between gap-3 md:flex-row md:items-center">
         <div>
-          <h1 className="font-display text-[30px] font-bold leading-tight tracking-[-0.02em] text-text">KakeAI</h1>
-          <p className="text-sm text-text2">緊急度と改善効果に応じた家計アクションを確認できます</p>
+          <h1 className="font-display text-[30px] font-bold leading-tight tracking-[-0.02em] text-text">KakeAIからの提案</h1>
+          <p className="text-sm text-text2">家計スコアやKakeAIからの改善提案を確認できます</p>
         </div>
-        <Button variant="ghost" className="h-11 px-5 text-sm font-semibold" onClick={() => void refresh()} disabled={refreshing}>
-          {refreshing ? '更新中...' : 'KakeAIを更新'}
+        <Button
+          variant="ghost"
+          className="h-11 px-5 text-sm font-semibold hover:!border-[var(--cta-bg)] hover:!bg-[var(--cta-bg)] hover:!text-[var(--cta-text)]"
+          onClick={() => void refresh()}
+          disabled={refreshing}
+        >
+          {refreshing ? '更新中...' : 'KakeAIの提案を更新'}
         </Button>
       </div>
 
       {error ? <p className="text-sm text-danger">{error}</p> : null}
 
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.7fr)_minmax(320px,1fr)]">
-        <div className="space-y-4">
-          <Card className="bg-card">
-            <CardContent className="grid gap-4 p-0 lg:grid-cols-[240px_minmax(0,1fr)]">
-              <div className="rounded-xl border border-border bg-bg2 p-4">
-                <div className="rounded-xl border border-border bg-card p-4 text-center">
-                  <p className="text-xs text-text2">家計スコア</p>
-                  <p className="font-display text-5xl font-bold text-accent">{advice.score}</p>
-                  <p className="text-xs text-text2">100点満点</p>
-                </div>
+      <div className="space-y-4">
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1.7fr)_minmax(320px,1fr)]">
+          <div className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-3">
+              <Card className="bg-card md:col-span-1">
+                <CardHeader>
+                  <CardTitle className="text-accent">家計スコア</CardTitle>
+                </CardHeader>
+                <CardContent className="flex justify-end pb-0">
+                  <div className="inline-flex items-end gap-1 font-display leading-none">
+                    <span className="text-8xl font-bold text-accent">{advice.score}</span>
+                    <span className="mb-1 text-3xl font-semibold text-text2">/100</span>
+                  </div>
+                </CardContent>
+              </Card>
 
-                <div className="mt-4 space-y-2">
-                  <p className="text-sm font-semibold text-text">来月の目標</p>
+              <Card className="bg-card md:col-span-2">
+                <CardHeader>
+                  <CardTitle className="text-accent">来月の目標</CardTitle>
+                </CardHeader>
+                <CardContent>
                   {advice.content.next_month_goals.length > 0 ? (
-                    <ul className="space-y-1 pl-4 text-xs text-text2">
+                    <ul className="space-y-2 pl-5 text-base text-text md:text-lg">
                       {advice.content.next_month_goals.map((goal) => (
                         <li key={goal} className="list-disc">
                           {goal}
@@ -82,33 +105,54 @@ export default function AdvicePage() {
                       ))}
                     </ul>
                   ) : (
-                    <p className="text-xs text-text2">来月の目標はまだありません。</p>
+                    <p className="text-base text-text2">来月の目標はまだありません。</p>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+
+            <Card className="bg-card">
+              <CardHeader>
+                <CardTitle className="text-accent">家計スコアの推移</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="rounded-xl border border-border bg-bg2 p-3">
+                  {history.length > 0 ? (
+                    <ScoreHistoryChart data={history} />
+                  ) : (
+                    <div className="flex h-56 items-center justify-center text-sm text-text2">スコア履歴がまだありません</div>
                   )}
                 </div>
-              </div>
-
-              <div className="rounded-xl border border-border bg-bg2 p-3">
-                {history.length > 0 ? (
-                  <ScoreHistoryChart data={history} />
-                ) : (
-                  <div className="flex h-56 items-center justify-center text-sm text-text2">スコア履歴がまだありません</div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          <div className="grid gap-4 md:grid-cols-2">
-            <AdviceSection title="改善提案" items={improvementItems} />
-            <AdviceSection title="継続中の良い点" items={advice.content.positives} />
+              </CardContent>
+            </Card>
           </div>
+          <QuestionPanel />
         </div>
-        <QuestionPanel />
+
+        <div className="grid gap-4 md:grid-cols-2">
+          <AdviceSection
+            title="改善提案"
+            items={improvementItems}
+            onSelectItem={(item) => setSelectedAdvice(buildAdviceDetailModalContent(item, '改善提案'))}
+          />
+          <AdviceSection title="継続中の良い点" items={advice.content.positives} />
+        </div>
       </div>
+
+      <AdviceDetailDialog detail={selectedAdvice} onOpenChange={(open) => !open && setSelectedAdvice(null)} />
     </div>
   )
 }
 
-function AdviceSection({ title, items }: { title: string; items: DisplayAdviceItem[] }) {
+function AdviceSection({
+  title,
+  items,
+  onSelectItem,
+}: {
+  title: string
+  items: DisplayAdviceItem[]
+  onSelectItem?: (item: DisplayAdviceItem) => void
+}) {
   return (
     <Card className="bg-card">
       <CardHeader>
@@ -116,27 +160,134 @@ function AdviceSection({ title, items }: { title: string; items: DisplayAdviceIt
       </CardHeader>
       <CardContent className="space-y-3">
         {items.length === 0 ? <p className="text-sm text-text2">表示できる項目はありません。</p> : null}
-        {items.map((item) => (
-          <article
-            key={`${item.title}-${item.body}`}
-            className={`rounded-lg border p-3 ${
-              item.urgent ? 'border-danger/30 bg-danger/10' : 'border-border bg-bg2'
-            }`}
-          >
-            <div className="flex items-center justify-between gap-2">
-              <h3 className="text-sm font-semibold text-text">{item.title}</h3>
-              {item.urgent ? (
-                <span className="rounded-full border border-danger/40 bg-danger/20 px-2 py-0.5 text-[10px] font-bold text-danger">
-                  緊急
-                </span>
-              ) : null}
-            </div>
-            <p className="mt-1 text-xs text-text2">{item.body}</p>
-          </article>
-        ))}
+        {items.map((item) => {
+          const className = `w-full rounded-lg border p-3 text-left ${
+            item.urgent ? 'border-danger/30 bg-danger/10' : 'border-border bg-bg2'
+          }`
+
+          if (onSelectItem) {
+            return (
+              <button
+                key={`${item.title}-${item.body}`}
+                type="button"
+                onClick={() => onSelectItem(item)}
+                className={`${className} transition-colors ${
+                  item.urgent ? 'hover:border-danger/50' : 'hover:border-accent/40'
+                }`}
+                aria-label={`${item.title}の詳細を表示`}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <h3 className="text-sm font-semibold text-text">{item.title}</h3>
+                  {item.urgent ? (
+                    <span className="rounded-full border border-danger/40 bg-danger/20 px-2 py-0.5 text-[10px] font-bold text-danger">
+                      緊急
+                    </span>
+                  ) : null}
+                </div>
+                <p className="mt-1 text-xs text-text2">{item.body}</p>
+                <p className="mt-2 text-[11px] font-semibold text-accent">クリックして詳細を見る</p>
+              </button>
+            )
+          }
+
+          return (
+            <article key={`${item.title}-${item.body}`} className={className}>
+              <div className="flex items-center justify-between gap-2">
+                <h3 className="text-sm font-semibold text-text">{item.title}</h3>
+                {item.urgent ? (
+                  <span className="rounded-full border border-danger/40 bg-danger/20 px-2 py-0.5 text-[10px] font-bold text-danger">
+                    緊急
+                  </span>
+                ) : null}
+              </div>
+              <p className="mt-1 text-xs text-text2">{item.body}</p>
+            </article>
+          )
+        })}
       </CardContent>
     </Card>
   )
+}
+
+function AdviceDetailDialog({
+  detail,
+  onOpenChange,
+}: {
+  detail: AdviceDetailModalContent | null
+  onOpenChange: (open: boolean) => void
+}) {
+  return (
+    <Dialog open={detail !== null} onOpenChange={onOpenChange}>
+      {detail ? (
+        <DialogContent className="max-w-xl min-h-[520px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-3">
+              <span>{detail.title}</span>
+              {detail.urgent ? (
+                <span className="rounded-full border border-danger/40 bg-danger/20 px-3 py-1 text-xs font-bold text-danger">
+                  緊急
+                </span>
+              ) : null}
+            </DialogTitle>
+            <Button type="button" variant="ghost" size="sm" className="h-8 px-3 text-xs" onClick={() => onOpenChange(false)}>
+              閉じる
+            </Button>
+          </DialogHeader>
+          <DialogBody className="space-y-4">
+            {detail.sectionTitle === '改善提案' ? null : <p className="text-sm font-semibold text-text2">{detail.sectionTitle}</p>}
+            {detail.sectionTitle === '改善提案' ? (
+              <div className="rounded-xl border border-border bg-bg2 px-4 py-3">
+                <p className="text-base text-text md:text-lg">{detail.summary}</p>
+              </div>
+            ) : (
+              <p className="text-sm text-text">{detail.summary}</p>
+            )}
+
+            <section className="space-y-3 pt-4">
+              <h3 className={detail.sectionTitle === '改善提案' ? 'text-lg font-semibold text-text md:text-xl' : 'text-base font-semibold text-text'}>
+                具体的な提案
+              </h3>
+              <ul className={detail.sectionTitle === '改善提案' ? 'space-y-2 pl-5 text-base text-text2 md:text-lg' : 'space-y-2 pl-5 text-sm text-text2'}>
+                {detail.proposalItems.map((proposal) => (
+                  <li key={proposal} className="list-disc">
+                    {proposal}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          </DialogBody>
+        </DialogContent>
+      ) : null}
+    </Dialog>
+  )
+}
+
+function buildAdviceDetailModalContent(item: DisplayAdviceItem, sectionTitle: string): AdviceDetailModalContent {
+  if (sectionTitle === '改善提案') {
+    return {
+      sectionTitle,
+      title: item.title,
+      summary: item.body,
+      proposalItems: [
+        '直近14日間の同カテゴリ支出を確認し、固定費・変動費に分けて改善対象を明確化する',
+        '金額インパクトが大きい項目から優先順位を付け、今月中に1件見直す',
+        '週の中間時点で実績を確認し、必要なら予算配分を微調整する',
+      ],
+      urgent: item.urgent,
+    }
+  }
+
+  return {
+    sectionTitle,
+    title: item.title,
+    summary: item.body,
+    proposalItems: [
+      '現在の良い行動を再現できる形に整理し、来月のルールとして固定化する',
+      '達成理由を金額や頻度で言語化し、再現しやすい条件を残す',
+      '来月も続ける条件を1つ決め、設定に反映して習慣化する',
+    ],
+    urgent: item.urgent,
+  }
 }
 
 type QaMessage = { role: 'user' | 'ai'; content: string }
@@ -145,10 +296,13 @@ function QuestionPanel() {
   const [messages, setMessages] = useState<QaMessage[]>([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
-  const bottomRef = useRef<HTMLDivElement>(null)
+  const messagesContainerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+    if (messages.length === 0 && !loading) return
+    const container = messagesContainerRef.current
+    if (!container) return
+    container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' })
   }, [messages, loading])
 
   async function handleSubmit(event: React.FormEvent) {
@@ -180,7 +334,8 @@ function QuestionPanel() {
       </CardHeader>
       <CardContent className="flex min-h-0 flex-1 flex-col gap-4">
         <div
-          className="min-h-0 flex-1 space-y-3 overflow-y-auto rounded-xl border border-border bg-bg2 p-3"
+          ref={messagesContainerRef}
+          className="min-h-0 flex-1 space-y-3 overflow-y-auto"
           aria-live="polite"
         >
           {messages.length === 0 ? (
@@ -220,7 +375,6 @@ function QuestionPanel() {
               </div>
             </div>
           ) : null}
-          <div ref={bottomRef} />
         </div>
         <form className="flex shrink-0 gap-2" onSubmit={(event) => void handleSubmit(event)}>
           <Input
@@ -232,7 +386,7 @@ function QuestionPanel() {
           />
           <Button
             type="submit"
-            className="bg-[var(--cta-bg)] text-[var(--cta-text)] hover:bg-[var(--cta-hover)]"
+            className="min-w-12 bg-[var(--cta-bg)] text-[var(--cta-text)] hover:bg-[var(--cta-hover)] md:min-w-16"
             disabled={!input.trim() || loading}
             aria-label="送信"
           >

@@ -89,7 +89,7 @@ export function ChatWizardModal() {
     >
       <DialogContent className="w-[calc(100vw-2rem)] max-w-[720px] bg-card">
         <DialogHeader>
-          <DialogTitle>チャットウィザード（AI）</DialogTitle>
+          <DialogTitle>KakeAIチャット</DialogTitle>
         </DialogHeader>
         <DialogBody className="max-h-[58vh] py-3">
           <div className="mb-3 text-xs text-text2">会話で設定を作成し、完了時にまとめて保存します。</div>
@@ -99,10 +99,7 @@ export function ChatWizardModal() {
             </p>
           ) : null}
 
-          <div
-            className="max-h-[360px] space-y-4 overflow-y-auto rounded-xl border border-border bg-card2 p-3"
-            aria-live="polite"
-          >
+          <div className="max-h-[360px] space-y-4 overflow-y-auto" aria-live="polite">
             {wizard.messages.map((message, index) =>
               message.role === 'model' ? (
                 // AIメッセージ: アイコン左 + 吹き出し右
@@ -161,7 +158,7 @@ export function ChatWizardModal() {
               />
               <Button
                 type="submit"
-                className="bg-[var(--cta-bg)] text-[var(--cta-text)] hover:bg-[var(--cta-hover)]"
+                className="min-w-20 bg-[var(--cta-bg)] text-[var(--cta-text)] hover:bg-[var(--cta-hover)]"
                 disabled={!wizard.canSend}
                 aria-label="送信"
               >
@@ -171,45 +168,45 @@ export function ChatWizardModal() {
           )}
         </DialogBody>
         <DialogFooter className="justify-between">
+          <Button
+            type="button"
+            variant="ghost"
+            className="mr-auto hover:bg-danger hover:text-white"
+            onClick={() => {
+              wizard.reset()
+            }}
+          >
+            やり直す
+          </Button>
           <div className="flex gap-2">
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => {
-                wizard.reset()
-              }}
-            >
-              やり直す
-            </Button>
             <Button type="button" variant="ghost" onClick={() => close()}>
               閉じる
             </Button>
+            <Button
+              type="button"
+              className="bg-[var(--cta-bg)] text-[var(--cta-text)] hover:bg-[var(--cta-hover)]"
+              disabled={!canSave}
+              onClick={async () => {
+                try {
+                  const result = await wizard.saveConfig()
+                  toast({
+                    title: result.persisted ? '設定を保存しました' : '設定内容を確認用として保持しました',
+                    description: result.persisted ? undefined : 'API未接続のため一部はコンソールログへ出力されています。',
+                    variant: result.persisted ? 'success' : 'default',
+                  })
+                  close()
+                  wizard.reset()
+                } catch {
+                  toast({
+                    title: '設定保存に失敗しました',
+                    variant: 'error',
+                  })
+                }
+              }}
+            >
+              {wizard.saving ? '保存中...' : '保存する'}
+            </Button>
           </div>
-
-          <Button
-            type="button"
-            className="bg-[var(--cta-bg)] text-[var(--cta-text)] hover:bg-[var(--cta-hover)]"
-            disabled={!canSave}
-            onClick={async () => {
-              try {
-                const result = await wizard.saveConfig()
-                toast({
-                  title: result.persisted ? '設定を保存しました' : '設定内容を確認用として保持しました',
-                  description: result.persisted ? undefined : 'API未接続のため一部はコンソールログへ出力されています。',
-                  variant: result.persisted ? 'success' : 'default',
-                })
-                close()
-                wizard.reset()
-              } catch {
-                toast({
-                  title: '設定保存に失敗しました',
-                  variant: 'error',
-                })
-              }
-            }}
-          >
-            {wizard.saving ? '保存中...' : '保存する'}
-          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

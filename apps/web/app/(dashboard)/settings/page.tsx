@@ -9,6 +9,7 @@ import { Dialog, DialogBody, DialogContent, DialogHeader, DialogTitle } from '@/
 import { Input } from '@/components/ui/input'
 import { useToast } from '@/hooks/useToast'
 import { assumptionsApi, authProfileApi, connectionsApi } from '@/lib/api'
+import { useChatWizardStore } from '@/stores/chatWizardStore'
 
 type AssumptionsDraft = {
   age: number
@@ -19,8 +20,15 @@ type AssumptionsDraft = {
   simulation_trials: 100 | 500 | 1000
 }
 
+function formatAgeInput(value: string) {
+  const digitsOnly = value.replace(/[^\d]/g, '')
+  if (!digitsOnly) return ''
+  return String(Number(digitsOnly))
+}
+
 export default function SettingsPage() {
   const [displayName, setDisplayName] = useState('')
+  const [ageInput, setAgeInput] = useState('')
   const [assumptionsDraft, setAssumptionsDraft] = useState<AssumptionsDraft | null>(null)
   const [notificationEnabled, setNotificationEnabled] = useState(true)
   const [loading, setLoading] = useState(true)
@@ -36,6 +44,7 @@ export default function SettingsPage() {
   const { toast } = useToast()
   const router = useRouter()
   const searchParams = useSearchParams()
+  const openChatWizard = useChatWizardStore((state) => state.open)
 
   const lineLiffId = process.env.NEXT_PUBLIC_LINE_LIFF_ID
   const lineBotBasicId = process.env.NEXT_PUBLIC_LINE_BOT_BASIC_ID
@@ -59,6 +68,7 @@ export default function SettingsPage() {
         monthly_investment: assumptions.monthly_investment,
         simulation_trials: assumptions.simulation_trials,
       })
+      setAgeInput(String(assumptions.age))
 
       const lineConnection = connections.find((connection) => connection.platform === 'line' && connection.is_active)
       setLineConnected(Boolean(lineConnection))
@@ -277,45 +287,67 @@ export default function SettingsPage() {
         <p className="text-sm text-text2">プロフィール・連携・通知設定を編集できます</p>
       </div>
 
-      <Card className="bg-card">
-        <CardHeader>
-          <CardTitle className="text-accent">プロフィール設定</CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-4 md:grid-cols-2">
-          <div>
-            <label className="text-xs text-text2">表示名</label>
-            <Input value={displayName} onChange={(event) => setDisplayName(event.target.value)} />
-          </div>
-          <div>
-            <label className="text-xs text-text2">年齢</label>
-            <Input
-              type="number"
-              min={18}
-              max={100}
-              value={assumptionsDraft?.age ?? 30}
-              onChange={(event) =>
-                setAssumptionsDraft((prev) =>
-                  prev
-                    ? {
-                        ...prev,
-                        age: Number(event.target.value),
-                      }
-                    : prev,
-                )
-              }
-            />
-          </div>
-          <div className="md:col-span-2">
+      <div className="grid gap-5 md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] md:items-stretch">
+        <Card className="h-full bg-card">
+          <CardHeader>
+            <CardTitle className="text-accent">プロフィール設定</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-1">
+              <label className="text-xs text-text2">表示名</label>
+              <Input value={displayName} onChange={(event) => setDisplayName(event.target.value)} />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs text-text2">年齢</label>
+              <Input
+                className="w-20"
+                type="text"
+                inputMode="numeric"
+                placeholder="例: 30"
+                value={ageInput}
+                onChange={(event) => {
+                  const formatted = formatAgeInput(event.target.value)
+                  setAgeInput(formatted)
+                  setAssumptionsDraft((prev) =>
+                    prev
+                      ? {
+                          ...prev,
+                          age: formatted ? Number(formatted) : 0,
+                        }
+                      : prev,
+                  )
+                }}
+              />
+            </div>
+            <div className="flex justify-start">
+              <Button
+                className="bg-[var(--cta-bg)] text-[var(--cta-text)] hover:bg-[var(--cta-hover)]"
+                onClick={() => void handleProfileSave()}
+                disabled={savingProfile || !assumptionsDraft}
+              >
+                {savingProfile ? '保存中...' : '保存する'}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="flex h-full flex-col bg-card">
+          <CardHeader>
+            <CardTitle className="text-accent">チャットで再設定</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-1 flex-col gap-4">
+            <p className="text-sm leading-relaxed text-text2">
+              予算や目標などの設定を最初から見直したいときは、KakeAIチャットを通して再設定できます。
+            </p>
             <Button
-              className="bg-[var(--cta-bg)] text-[var(--cta-text)] hover:bg-[var(--cta-hover)]"
-              onClick={() => void handleProfileSave()}
-              disabled={savingProfile || !assumptionsDraft}
+              className="mt-auto bg-[var(--cta-bg)] text-[var(--cta-text)] hover:bg-[var(--cta-hover)]"
+              onClick={() => openChatWizard('budget')}
             >
-              {savingProfile ? '保存中...' : '保存する'}
+              🤖 KakeAIチャットで再設定する
             </Button>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
 
       <Card className="bg-card">
         <CardHeader>

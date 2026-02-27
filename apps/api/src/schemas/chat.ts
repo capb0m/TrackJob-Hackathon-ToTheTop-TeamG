@@ -14,6 +14,7 @@ export const chatBodySchema = z.object({
 export const chatConfigSchema = z.object({
   monthly_income: z.number().int().min(1),
   monthly_savings_target: z.number().int().min(0),
+  current_savings: z.number().int().min(0).optional(),
   life_goals: z
     .array(
       z.object({
